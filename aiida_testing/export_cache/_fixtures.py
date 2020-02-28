@@ -6,6 +6,7 @@ Meant to be useful for WorkChain tests.
 import os
 import uuid
 import shutil
+import hashlib
 import inspect
 import pathlib
 import typing as ty
@@ -48,7 +49,7 @@ def run_with_cache():
         """
 
         from aiida.common.hashing import make_hash
-        from aiida.orm import ProcessNode, QueryBuilder
+        from aiida.orm import ProcessNode, QueryBuilder, Node, Code
         from aiida.tools.importexport import import_data
         from aiida.tools.importexport import export
         from aiida.engine import run_get_node
@@ -59,13 +60,28 @@ def run_with_cache():
 
         cwd = pathlib.Path(os.getcwd())                  # Might be not the best idea.
         data_dir = (cwd / 'data_dir')                    # TODO: get from config?
-        hash = make_hash(builder)
+        #bui_hash = make_hash(builder)
+        
+        # hashing the builder
+        # currently workchains are not hashed in AiiDA so we have to it
+        md5sum = hashlib.md5()
+        for key, val in sorted(builder.items()):
+            
+            if isinstance(val, Code):
+               continue # we do not include the code in the hash, might be mocked
+            if isinstance(val, Node):
+               val_hash = val.get_hash() # only works if nodes are already stored!
+            else:
+               val_hash = make_hash(val)
+            md5sum.update(val_hash.encode())
+
+        bui_hash = md5sum.hexdigest()    
         process_class = builder.process_class
-        name = label + str(process_class).split('.')[-1].strip("'>") + 'nodes' + hash
-
+        name = label + str(process_class).split('.')[-1].strip("'>") + '-nodes-' + bui_hash
+        print(name)
         # check existence
-        full_import_path = datadir + '/' + name + '.tar.gz'
-
+        full_import_path = str(data_dir) + '/' + name + '.tar.gz'
+        print(full_import_path)
         cache_path = pathlib.Path(full_import_path)
         if cache_path.exists():
             cache_exists = True
@@ -89,7 +105,7 @@ def run_with_cache():
         with enable_caching(): # should enable caching globally in this python interpreter
             out, node = run_get_node(builder)
 
-        if not cache_exits:
+        if not cache_exists:
             # TODO create datadir if not existent
             # export data to reuse it later
             export([node], outfile=full_import_path, overwrite=True) # add export of extras automatically
