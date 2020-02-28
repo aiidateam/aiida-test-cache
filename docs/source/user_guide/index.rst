@@ -7,4 +7,4 @@ User guide
 
     get_started
     mock_code
-    export_cache
+    archive_cache

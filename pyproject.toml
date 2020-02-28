@@ -74,7 +74,7 @@ aiida-mock-code = "aiida_testing.mock_code._cli:run"
 
 [project.entry-points."pytest11"]
 aiida_mock_code = "aiida_testing.mock_code"
-aiida_export_cache = "aiida_testing.export_cache"
+aiida_archive_cache = "aiida_testing.archive_cache"
 
 [tool.pylint.format]
 max-line-length = 120

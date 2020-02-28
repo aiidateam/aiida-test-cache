@@ -57,6 +57,7 @@ extensions = [
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'aiida': ('http://aiida-core.readthedocs.io/en/v1.6.8/', None),
+    'pytest': ('https://docs.pytest.org/en/latest/', None)
 }
 
 # Add any paths that contain templates here, relative to this directory.
@@ -411,5 +412,5 @@ nitpick_ignore = [
     ('py:obj', 'float'),
     ('py:obj', 'bool'),
     ('py:obj', 'Mapping'),
-    ('py:class', '_pytest.fixtures.FixtureRequest'),
+    ('py:class', 'aiida_testing._config.Config'),
 ]

@@ -15,6 +15,7 @@ jobs:
         #Test for aiida-core 1.X (since aiida-core 2.X does not support python 3.7)
         - python-version: '3.7'
           editable_install_option: '-e'
+      fail-fast: false
 
     services:
       postgres:

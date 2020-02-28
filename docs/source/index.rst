@@ -11,8 +11,8 @@ fixtures to cache the execution of codes:
 * :mod:`.mock_code`: Caches at the level of the code executable. Use this for
   testing calculation and parser plugins, because input file generation
   and output parsing are also being tested.
-* :mod:`.export_cache`: Uses the AiiDA caching feature, in combination with
-  an automatic database export / import. Use this to test high-level
+* :mod:`.archive_cache`: Uses the AiiDA caching feature, in combination with
+  an automatic archive creation/loading. Use this to test high-level
   workflows.
 
 ``aiida-testing`` is available at http://github.com/aiidateam/aiida-testing

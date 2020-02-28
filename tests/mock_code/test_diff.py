@@ -10,46 +10,12 @@ from pathlib import Path
 
 import pytest
 
-from aiida import orm
 from aiida.engine import run_get_node
-from aiida.plugins import CalculationFactory, DataFactory
+from aiida.plugins import CalculationFactory
 
 CALC_ENTRY_POINT = 'diff'
 
 TEST_DATA_DIR = Path(__file__).resolve().parent / 'data'
-
-
-@pytest.fixture
-def generate_diff_inputs(datadir):
-    """
-    Generates inputs for the diff calculation.
-    """
-
-    def _generate_diff_inputs():
-        with open(datadir / 'file1.txt', 'rb') as f1_obj:
-            file1 = orm.SinglefileData(file=f1_obj)
-        with open(datadir / 'file2.txt', 'rb') as f2_obj:
-            file2 = orm.SinglefileData(file=f2_obj)
-
-        inputs = {
-            "file1": file1,
-            "file2": file2,
-            "metadata": {
-                "options": {
-                    "withmpi": False,
-                    "resources": {
-                        "num_machines": 1,
-                        "num_mpiprocs_per_machine": 1
-                    }
-                }
-            },
-            "parameters": DataFactory("diff")(dict={
-                "ignore-case": False
-            })
-        }
-        return inputs
-
-    return _generate_diff_inputs
 
 
 def check_diff_output(result):
@@ -77,7 +43,7 @@ def relative_code(testing_config):
         os.remove(testing_config.file_path.parent / 'diff')
 
 
-def test_basic(mock_code_factory, generate_diff_inputs):  # pylint: disable=redefined-outer-name
+def test_basic(mock_code_factory, generate_diff_inputs):
     """
     Check that mock code takes data from cache, if inputs are recognized.
     """
@@ -96,7 +62,7 @@ def test_basic(mock_code_factory, generate_diff_inputs):  # pylint: disable=rede
     check_diff_output(res)
 
 
-def test_inexistent_data(mock_code_factory, generate_diff_inputs):  # pylint: disable=redefined-outer-name
+def test_inexistent_data(mock_code_factory, generate_diff_inputs):
     """
     Check that the mock code runs external executable if there is no existing data.
     """
@@ -115,7 +81,7 @@ def test_inexistent_data(mock_code_factory, generate_diff_inputs):  # pylint: di
         check_diff_output(res)
 
 
-def test_broken_code(mock_code_factory, generate_diff_inputs):  # pylint: disable=redefined-outer-name
+def test_broken_code(mock_code_factory, generate_diff_inputs):
     """
     Check that the mock code works also when no executable is given, if the result exists already.
     """

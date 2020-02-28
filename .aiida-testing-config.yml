@@ -1,3 +1,12 @@
 mock_code:
   diff: /usr/bin/diff
   diff-relative: ./diff
+archive_cache:
+  ignore:
+    calcjob_attributes:
+      #These attributes have to be ignored to be able to run the export cache tests
+      #while reusing the same test archive, migrating it to the needed version,
+      #since they are only present in newer versions
+      #The test archives have version 0.8
+      - environment_variables_double_quotes #This option was introduced in aiida-core 2.0
+      - submit_script_filename #This option was introduced in aiida-core 1.2.1 (archive version 0.9)
