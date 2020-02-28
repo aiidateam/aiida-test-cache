@@ -3,7 +3,7 @@
 Defines a pytest fixture for automatically enable caching in tests and exports an aiida graph if not existent.
 Meant to be useful for WorkChain tests.
 """
-
+import os
 import uuid
 import shutil
 import inspect
@@ -12,12 +12,12 @@ import typing as ty
 
 import pytest
 
-from ._env_keys import EnvKeys
-from .._config import get_config
+#from .._config import get_config
+from aiida_testing._config import get_config
 
-__all__ = ("run_with_cache")
+__all__ = ("run_with_cache",)
 
-'''
+
 @pytest.fixture(scope='function')
 def run_with_cache():
     """
@@ -25,7 +25,7 @@ def run_with_cache():
     """
 
     def _run_with_cache(
-        builder: aiida process builder class,
+        builder, #aiida process builder class,
         label: str = '',
         #data_dir_abspath: ty.Union[str, pathlib.Path],
         #ignore_nodes: ty.Iterable[str] = ('_aiidasubmit.sh', )
@@ -96,6 +96,6 @@ def run_with_cache():
 
         return out, node
 
-    return _run_with_cash
+    return _run_with_cache
 
-'''
+
