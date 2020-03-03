@@ -18,6 +18,10 @@ from aiida_testing._config import get_config
 
 __all__ = ("run_with_cache",)
 
+from aiida.engine import ProcessBuilder
+import pathlib
+
+
 
 @pytest.fixture(scope='function')
 def run_with_cache():
@@ -26,7 +30,7 @@ def run_with_cache():
     """
 
     def _run_with_cache(
-        builder, #aiida process builder class,
+        builder: ProcessBuilder, #aiida process builder class,
         label: str = '',
         #data_dir_abspath: ty.Union[str, pathlib.Path],
         #ignore_nodes: ty.Iterable[str] = ('_aiidasubmit.sh', )
@@ -60,6 +64,16 @@ def run_with_cache():
 
         cwd = pathlib.Path(os.getcwd())                  # Might be not the best idea.
         data_dir = (cwd / 'data_dir')                    # TODO: get from config?
+
+
+        # make sure all nodes are stored (needed to compute hashes)
+        from aiida.orm import Node
+        for _,node in builder.items():
+            if isinstance(node,Node):
+                if not node.is_stored:
+                    node.store()
+
+
         #bui_hash = make_hash(builder)
         
         # hashing the builder
