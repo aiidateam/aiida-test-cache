@@ -8,46 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from aiida import orm
 from aiida.engine import run_get_node
 from aiida.plugins import CalculationFactory, DataFactory
 
 CALC_ENTRY_POINT = 'diff'
 
 TEST_DATA_DIR = Path(__file__).resolve().parent / 'data'
-
-
-@pytest.fixture
-def generate_diff_inputs(datadir):
-    """
-    Generates inputs for the diff calculation.
-    """
-
-    def _generate_diff_inputs():
-        with open(datadir / 'file1.txt', 'rb') as f1_obj:
-            file1 = orm.SinglefileData(file=f1_obj)
-        with open(datadir / 'file2.txt', 'rb') as f2_obj:
-            file2 = orm.SinglefileData(file=f2_obj)
-
-        inputs = {
-            "file1": file1,
-            "file2": file2,
-            "metadata": {
-                "options": {
-                    "withmpi": False,
-                    "resources": {
-                        "num_machines": 1,
-                        "num_mpiprocs_per_machine": 1
-                    }
-                }
-            },
-            "parameters": DataFactory("diff")(dict={
-                "ignore-case": False
-            })
-        }
-        return inputs
-
-    return _generate_diff_inputs
 
 
 def check_diff_output(result):
