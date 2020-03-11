@@ -19,6 +19,53 @@ import pathlib
 __all__ = ("run_with_cache", "load_cache", "export_cache")
 
 
+
+# utils
+
+def unnest_dict(nested_dict):
+    """
+    Returns a simple dictionary from a possible arbitray nested dictionary
+    by adding keys in dot notation, rekrusively
+    """
+    new_dict = {}
+    for key, val in nested_dict.items():
+        if isinstance(val, dict):
+            unval = unnest_dict(val)              #rekursive!
+            for k, v in unval.items():
+                key_new = str(key) + '.' + str(k)
+                new_dict[key_new] = v
+        else:
+            new_dict[str(key)] = val
+    return new_dict
+
+def get_hash_process(builder, input_nodes=[]):
+    """ creates a hash from a builder/dictionary of inputs"""
+    from aiida.common.hashing import make_hash
+    from aiida.orm import Node, Code
+    import hashlib
+
+    # hashing the builder
+    # currently workchains are not hashed in AiiDA so we create a hash for the filename
+    unnest_builder = unnest_dict(builder)
+    md5sum = hashlib.md5()
+    for key, val in sorted(unnest_builder.items()):
+        if isinstance(val, Code):
+           continue # we do not include the code in the hash, might be mocked
+           #TODO include the code to some extent
+        if isinstance(val, Node):
+            if not val.is_stored:
+               val.store()
+            val_hash = val.get_hash()         # only works if nodes are stored!
+            input_nodes.append(val)
+        else:
+            val_hash = make_hash(val)
+        md5sum.update(val_hash.encode())
+    bui_hash = md5sum.hexdigest()
+
+    return bui_hash, input_nodes
+
+
+
 @pytest.fixture(scope='function')
 def export_cache():
     """Fixture to export an AiiDA graph from a given node"""
@@ -86,43 +133,6 @@ def load_cache():
             node[0].rehash()
 
     return _load_cache
-
-
-
-def get_hash_process(builder, input_nodes=[]):
-    """ creates a hash from a builder/dictionary of inputs"""
-    from aiida.common.hashing import make_hash
-    from aiida.orm import Node, Code
-    import hashlib
-
-    # hashing the builder
-    # currently workchains are not hashed in AiiDA so we create a hash for the filename
-    md5sum = hashlib.md5()
-    for key, val in sorted(builder.items()):
-        if isinstance(val, Code):
-           continue # we do not include the code in the hash, might be mocked
-           #TODO include the code to some extent
-        if isinstance(val, Node):
-            if not val.is_stored:
-               val.store()
-            val_hash = val.get_hash()         # only works if nodes are stored!
-            input_nodes.append(val)
-        #elif not isinstance(val, dict):            # inputs can be nested
-        #    val_hash = make_hash(val)
-        elif isinstance(val, dict):
-            print('here')
-            print(val)
-            continue
-            #val_hash, input_nodes2 = get_hash_process(val, input_nodes) #recursive!
-            for entry in input_nodes2:
-                input_nodes.append(entry)
-            print(val_hash)
-        else:
-            val_hash = make_hash(val)
-        md5sum.update(val_hash.encode())
-    bui_hash = md5sum.hexdigest(size=16)
-
-    return bui_hash, input_nodes
 
 
 @pytest.fixture(scope='function')
