@@ -15,8 +15,10 @@ import pytest
 from aiida_testing._config import get_config
 from aiida.engine import ProcessBuilder
 import pathlib
+from contextlib import contextmanager
 
-__all__ = ("run_with_cache", "load_cache", "export_cache")
+__all__ = ("run_with_cache", "load_cache", "export_cache", "with_export_cache",
+"hash_code_by_entrypoint")
 
 
 
@@ -76,7 +78,7 @@ def export_cache():
         """
         Function to export an AiiDA graph from a given node.
 
-        :param node: AiiDA node which graph is to be exported
+        :param node: AiiDA node which graph is to be exported, or list of nodes
         :param savepath: str or path where the export file is to be saved
         :param overwrite: bool, default=True, if existing export is overwritten
         """
@@ -84,15 +86,18 @@ def export_cache():
 
         # TODO: if relativ savepath get default data dir
         full_export_path = savepath
-
-        export([node], outfile=full_export_path, overwrite=overwrite,
+        if isinstance(node, list):
+            to_export = node
+        else:
+            to_export = [node]
+        export(to_export, outfile=full_export_path, overwrite=overwrite,
                include_comments=True)      # extras are automatically
 
     return _export_cache
 
 
 @pytest.fixture(scope='function')
-def load_cache():
+def load_cache(hash_code_by_entrypoint):
     """Fixture to load a cached AiiDA graph"""
     def _load_cache(path_to_cache=None, node=None, load_all=False):
         """
@@ -143,10 +148,95 @@ def load_cache():
         qb = QueryBuilder()
         qb.append(ProcessNode, tag='node') # query for all ProcesNodes
         to_hash = qb.all()
-        for node in to_hash:
-            node[0].rehash()
+        for node1 in to_hash:
+            node1[0].rehash()
 
     return _load_cache
+
+
+@pytest.fixture(scope='function')
+def with_export_cache(export_cache, load_cache):
+    """
+    Fixture to use in a with() environment within a test to enable caching within the with.
+    Requires to provide an absolutpath to the export file to load or export to.
+    """
+    @contextmanager
+    def _with_export_cache(data_dir_abspath, calculation_class=None):
+        """
+        Function
+        """
+        from aiida.manage.caching import enable_caching
+        from aiida.orm import CalcJobNode
+        from aiida.orm.querybuilder import QueryBuilder
+
+        # check and load export
+        export_exists = os.path.isfile(data_dir_abspath)
+        if export_exists:
+            load_cache(path_to_cache=data_dir_abspath)
+
+        # default enable globally for all jobcalcs
+        if calculation_class is None:
+            identifier = None
+        else:
+            identifier = calculation_class.build_process_type()
+        with enable_caching(identifier=identifier):
+            yield # now the test runs
+
+
+        # This is executed after the test
+        if not export_exists:
+            # create export of all calculation_classes
+            # in case of yield:is the db already cleaned?
+            if calculation_class is None:
+                queryclass = CalcJobNode
+            else:
+                queryclass = calculation_class
+            qb = QueryBuilder()
+            qb.append(queryclass, tag='node') # query for CalcJobs nodes
+            to_export = [entry[0] for entry in qb.all()]
+            print(to_export)
+            export_cache(node=to_export, savepath=data_dir_abspath)
+
+    return _with_export_cache
+
+@pytest.fixture
+def hash_code_by_entrypoint(monkeypatch):
+    """
+    """
+    from aiida.orm import Code, CalcJobNode
+    from aiida.common.links import LinkType
+
+    def mock_get_objects_to_hash(self):
+        #return ['fleur.fleur', 'aiida-localhost-test']
+        return [self.get_attribute(key='input_plugin'), self.get_computer_name()]
+
+
+    def mock_get_objects_to_hash_calcjob(self):
+        """Return a list of objects which should be included in the hash.
+
+        """
+        from importlib import import_module
+        objects = [
+            import_module(self.__module__.split('.', 1)[0]).__version__,
+            {
+                key: val
+                for key, val in self.attributes_items()
+                if key not in self._hash_ignored_attributes and key not in
+                self._updatable_attributes  # pylint: disable=unsupported-membership-test
+            },
+            #self.computer.uuid if self.computer is not None else None,  # pylint: disable=no-member
+            {
+                entry.link_label: entry.node.get_hash()
+                for entry in self.get_incoming(link_type=(LinkType.INPUT_CALC, LinkType.INPUT_WORK))
+                if entry.link_label not in self._hash_ignored_inputs
+            }
+        ]
+        return objects
+
+    monkeypatch.setattr(Code, "_get_objects_to_hash", mock_get_objects_to_hash)
+
+    monkeypatch.setattr(CalcJobNode, "_get_objects_to_hash", mock_get_objects_to_hash_calcjob)
+
 
 
 @pytest.fixture(scope='function')
