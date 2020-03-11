@@ -20,7 +20,7 @@ __all__ = ("run_with_cache", "load_cache", "export_cache")
 
 
 
-# utils
+#### utils
 
 def unnest_dict(nested_dict):
     """
@@ -64,7 +64,9 @@ def get_hash_process(builder, input_nodes=[]):
 
     return bui_hash, input_nodes
 
+####
 
+#### fixtures
 
 @pytest.fixture(scope='function')
 def export_cache():
@@ -89,17 +91,18 @@ def export_cache():
     return _export_cache
 
 
-
 @pytest.fixture(scope='function')
 def load_cache():
     """Fixture to load a cached AiiDA graph"""
-    def _load_cache(path_to_cache=None, node=None):
+    def _load_cache(path_to_cache=None, node=None, load_all=False):
         """
         Function to import an AiiDA graph
 
-        :param path_to_cache: str or path to the AiiDA export file to load
+        :param path_to_cache: str or path to the AiiDA export file to load,
+            if path_to_cache points to a directory, all import files in this dir are imported
+
         :param node: AiiDA node which cache to load,
-                     if no path_to_cache is given tries to guess it.
+            if no path_to_cache is given tries to guess it.
         """
         from aiida.tools.importexport import import_data
         from aiida.orm.querybuilder import QueryBuilder
@@ -119,15 +122,26 @@ def load_cache():
             full_import_path = pathlib.Path(path_to_cache)
 
         if full_import_path.exists():
-            # import cache, also import extras
-            import_data(full_import_path, extras_mode_existing='ncu', extras_mode_new='import')
+            if os.path.isfile(full_import_path):
+                # import cache, also import extras
+                import_data(full_import_path, extras_mode_existing='ncu', extras_mode_new='import')
+            elif os.path.isdir(full_import_path):
+                for filename in os.listdir(full_import_path):
+                    file_full_import_path = os.path.join(full_import_path, filename)
+                    # we curretly assume all files are valid aiida exports...
+                    # maybe check if valid aiida export, or catch exception
+                    import_data(file_full_import_path, extras_mode_existing='ncu', extras_mode_new='import')
+            else: # Should never get there
+                raise OSError("Path: {} to be imported exists, but is neither a file or directory.".format(full_import_path))
         else:
             raise OSError("File: {} to be imported does not exist.".format(full_import_path))
 
         # need to rehash after import, otherwise cashing does not work
         # for this we rehash all process nodes
+        # this way we use the full caching mechanism of aiida-core.
+        # currently this should only cache CalcJobNodes
         qb = QueryBuilder()
-        qb.append(ProcessNode, tag='node') # query for all ProcessNodes
+        qb.append(ProcessNode, tag='node') # query for all ProcesNodes
         to_hash = qb.all()
         for node in to_hash:
             node[0].rehash()
@@ -178,24 +192,7 @@ def run_with_cache(export_cache, load_cache):
             cwd = pathlib.Path(os.getcwd())               # Might be not the best idea.
             data_dir = (cwd / 'data_dir')                 # TODO: get from config?
 
-        #input_nodes = []
 
-        # hashing the builder
-        # currently workchains are not hashed in AiiDA so we create a hash for the filename
-        #md5sum = hashlib.md5()
-        #for key, val in sorted(builder.items()):
-        #    if isinstance(val, Code):
-        #       continue # we do not include the code in the hash, might be mocked
-        #       #TODO include the code to some extent
-        #    if isinstance(val, Node):
-        #       if not val.is_stored:
-        #           val.store()
-        #       val_hash = val.get_hash()         # only works if nodes are stored!
-        #       input_nodes.append(val)
-        #    else:
-        #       val_hash = make_hash(val)
-        #    md5sum.update(val_hash.encode())
-        #bui_hash = md5sum.hexdigest()
         bui_hash, input_nodes = get_hash_process(builder)
         print(bui_hash)
 
@@ -224,20 +221,23 @@ def run_with_cache(export_cache, load_cache):
         # This is executed after the test
         if not cache_exists:
             # TODO create datadir if not existent
-            # is the db already cleaned?
 
+            # in case of yield:
+            # is the db already cleaned?
             # since we do not the stored process node we try to get it from the inputs,
             # i.e to which node they are all connected, with the lowest common pk
-            union = ()
+            union = set()
             for node in input_nodes:
                 pks = set([ent.node.pk for ent in node.get_outgoing().all()])
                 union = union.union(pks)
             if len(union) != 0:
                 process_node_pk = min(union)
-
                 #export data to reuse it later
-                export_cache(node=load_node(process_node.pk), savepath=full_import_path)
+                export_cache(node=load_node(process_node_pk), savepath=full_import_path)
             else:
                 print('could not find the process node')
+            # if no yield
+            #export_cache(node=resnode, savepath=full_import_path)
+
         return res, resnode
     return _run_with_cache
