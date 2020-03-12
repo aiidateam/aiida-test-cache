@@ -95,7 +95,7 @@ def export_cache():
 
     return _export_cache
 
-
+# Do we always want to use hash_code_by_entrypoint here?
 @pytest.fixture(scope='function')
 def load_cache(hash_code_by_entrypoint):
     """Fixture to load a cached AiiDA graph"""
@@ -185,8 +185,10 @@ def with_export_cache(export_cache, load_cache):
 
         # This is executed after the test
         if not export_exists:
+            # in case of yield: is the db already cleaned?
             # create export of all calculation_classes
-            # in case of yield:is the db already cleaned?
+            # Another solution out of this is to check the time before and
+            # after the yield and export ONLY the jobcalc classes created within this time frame
             if calculation_class is None:
                 queryclass = CalcJobNode
             else:
@@ -194,7 +196,6 @@ def with_export_cache(export_cache, load_cache):
             qb = QueryBuilder()
             qb.append(queryclass, tag='node') # query for CalcJobs nodes
             to_export = [entry[0] for entry in qb.all()]
-            print(to_export)
             export_cache(node=to_export, savepath=data_dir_abspath)
 
     return _with_export_cache
@@ -202,6 +203,8 @@ def with_export_cache(export_cache, load_cache):
 @pytest.fixture
 def hash_code_by_entrypoint(monkeypatch):
     """
+    Monkeypatch .get_objects_to_hash of Code and CalcJobNodes of aiida-core
+    to not include the uuid of the computer and less information of the code node in the hash
     """
     from aiida.orm import Code, CalcJobNode
     from aiida.common.links import LinkType
@@ -212,8 +215,9 @@ def hash_code_by_entrypoint(monkeypatch):
 
 
     def mock_get_objects_to_hash_calcjob(self):
-        """Return a list of objects which should be included in the hash.
-
+        """
+        Return a list of objects which should be included in the hash.
+        code from aiida-core, only self.computer.uuid is commented out
         """
         from importlib import import_module
         objects = [
