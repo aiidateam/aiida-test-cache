@@ -4,20 +4,21 @@ Test basic usage of the mock code on examples using aiida-diff.
 """
 
 import os
-import tempfile
-
 import pytest
 
 from aiida.engine import run_get_node
 from aiida.plugins import CalculationFactory, DataFactory
-from aiida.engine import WorkChain, run, ToContext
-from aiida.orm import Node, Code, SinglefileData
+from aiida.engine import WorkChain
+from aiida.engine import ToContext
+from aiida.orm import Node
+from aiida.orm.querybuilder import QueryBuilder
 
 DiffParameters = DataFactory('diff')
 DiffCalculation = CalculationFactory('diff')
 CALC_ENTRY_POINT = 'diff'
 
 #### diff workchain for basic tests
+
 
 class DiffWorkChain(WorkChain):
     """
@@ -33,7 +34,6 @@ class DiffWorkChain(WorkChain):
         )
         spec.output('computed_diff')
 
-
     def rundiff(self):
         inputs = self.exposed_inputs(DiffCalculation, 'diff')
         running = self.submit(DiffCalculation, **inputs)
@@ -47,12 +47,13 @@ class DiffWorkChain(WorkChain):
 
 #### tests
 
+
 def test_export_cache(mock_code_factory, generate_diff_inputs, export_cache):
     """
     Basic test of the export cache fixture functionality,
     runs diff workchain and creates export, check if export was created
     """
-    inputs = {'diff' : generate_diff_inputs()}
+    inputs = {'diff': generate_diff_inputs()}
     mock_code = mock_code_factory(
         label='diff',
         data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
@@ -72,7 +73,9 @@ def test_export_cache(mock_code_factory, generate_diff_inputs, export_cache):
     assert res['computed_diff'].get_content() == res_diff
 
     # now export cache
-    savepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'caches/diff_workchain.tar.gz')
+    savepath = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'caches/diff_workchain.tar.gz'
+    )
     if os.path.isfile(savepath):
         os.remove(savepath)
     export_cache(node, savepath=savepath)
@@ -83,23 +86,22 @@ def test_export_cache(mock_code_factory, generate_diff_inputs, export_cache):
 def test_load_cache(load_cache, clear_database):
     """Basic test of the load cache fixture functionality, check if export is loaded"""
     #depends on previous test, maybe merge them?
-    from aiida.orm.querybuilder import QueryBuilder
 
     cache_path = os.path.join(
-                     os.path.dirname(os.path.abspath(__file__)),
-                                    'caches/diff_workchain.tar.gz')
+        os.path.dirname(os.path.abspath(__file__)), 'caches/diff_workchain.tar.gz'
+    )
     # we check the number of nodes
 
     load_cache(cache_path)
 
-    qb = QueryBuilder()
-    qb.append(Node)
-    n_nodes = len(qb.all())
+    qub = QueryBuilder()
+    qub.append(Node)
+    n_nodes = len(qub.all())
 
     assert n_nodes == 9
 
 
-def test_mock_hash_codes(mock_code_factory, clear_database, hash_code_by_entrypoint):
+def test_mock_hash_codes(mock_code_factory, clear_database, hash_code_by_entrypoint):  # pylint: disable=redefined-outer-name
     """test if mock of _get_objects_to_hash works for Code and Calcs"""
 
     mock_code = mock_code_factory(
@@ -113,13 +115,14 @@ def test_mock_hash_codes(mock_code_factory, clear_database, hash_code_by_entrypo
 
 
 @pytest.mark.timeout(60, method='thread')
-def test_run_with_cache(mock_code_factory, generate_diff_inputs, run_with_cache,
-hash_code_by_entrypoint, clear_database):
+def test_run_with_cache(
+    mock_code_factory, generate_diff_inputs, run_with_cache, hash_code_by_entrypoint, clear_database
+):  # pylint: disable=redefined-outer-name
     """
     Basic test of the run with cache fixture functionality,
     should run workchain with cached calcjob
     """
-    inputs = {'diff' : generate_diff_inputs()}
+    inputs = {'diff': generate_diff_inputs()}
     mock_code = mock_code_factory(
         label='diff',
         data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
@@ -150,18 +153,17 @@ hash_code_by_entrypoint, clear_database):
     assert cache_src is not None
 
 
-
-
-
 @pytest.mark.timeout(60, method='thread')
-def test_with_export_cache(mock_code_factory, generate_diff_inputs, with_export_cache,
-hash_code_by_entrypoint, clear_database):
+def test_with_export_cache(
+    mock_code_factory, generate_diff_inputs, with_export_cache, hash_code_by_entrypoint,
+    clear_database
+):  # pylint: disable=redefined-outer-name
     """
     Basic test of the run with cache fixture functionality,
     should run workchain with cached calcjob
     """
 
-    inputs = {'diff' : generate_diff_inputs()}
+    inputs = {'diff': generate_diff_inputs()}
     mock_code = mock_code_factory(
         label='diff',
         data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
@@ -169,7 +171,9 @@ hash_code_by_entrypoint, clear_database):
         ignore_files=('_aiidasubmit.sh', 'file*')
     )
     inputs['diff']['code'] = mock_code
-    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'caches/test_workchain.tar.gz')
+    data_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'caches/test_workchain.tar.gz'
+    )
     with with_export_cache(data_dir_abspath=data_dir, calculation_class=DiffWorkChain):
         res, node = run_get_node(DiffWorkChain, **inputs)
 
@@ -189,6 +193,3 @@ hash_code_by_entrypoint, clear_database):
     calc_hash = diffjob.get_hash()
     assert calc_hash == calc_hash_s
     assert cache_src is not None
-
-
-

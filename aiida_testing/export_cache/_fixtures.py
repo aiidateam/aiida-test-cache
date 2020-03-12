@@ -4,25 +4,24 @@ Defines pytest fixtures for automatically enable caching in tests and export aii
 Meant to be useful for WorkChain tests.
 """
 import os
-import uuid
-import shutil
 import hashlib
-import inspect
 import pathlib
 import typing as ty
 import pytest
-#from .._config import get_config
-from aiida_testing._config import get_config
-from aiida.engine import ProcessBuilder
-import pathlib
+from aiida.engine import ProcessBuilder, run_get_node
+from aiida.common.hashing import make_hash
+from aiida.orm import Node, Code, load_node
+from aiida.orm import CalcJobNode, ProcessNode
+from aiida.orm.querybuilder import QueryBuilder
+from aiida.manage.caching import enable_caching
 from contextlib import contextmanager
 
-__all__ = ("run_with_cache", "load_cache", "export_cache", "with_export_cache",
-"hash_code_by_entrypoint")
-
-
+__all__ = (
+    "run_with_cache", "load_cache", "export_cache", "with_export_cache", "hash_code_by_entrypoint"
+)
 
 #### utils
+
 
 def unnest_dict(nested_dict):
     """
@@ -32,19 +31,17 @@ def unnest_dict(nested_dict):
     new_dict = {}
     for key, val in nested_dict.items():
         if isinstance(val, dict):
-            unval = unnest_dict(val)              #rekursive!
-            for k, v in unval.items():
-                key_new = str(key) + '.' + str(k)
-                new_dict[key_new] = v
+            unval = unnest_dict(val)  #rekursive!
+            for key2, val2 in unval.items():
+                key_new = str(key) + '.' + str(key2)
+                new_dict[key_new] = val2
         else:
             new_dict[str(key)] = val
     return new_dict
 
+
 def get_hash_process(builder, input_nodes=[]):
     """ creates a hash from a builder/dictionary of inputs"""
-    from aiida.common.hashing import make_hash
-    from aiida.orm import Node, Code
-    import hashlib
 
     # hashing the builder
     # currently workchains are not hashed in AiiDA so we create a hash for the filename
@@ -52,12 +49,12 @@ def get_hash_process(builder, input_nodes=[]):
     md5sum = hashlib.md5()
     for key, val in sorted(unnest_builder.items()):
         if isinstance(val, Code):
-           continue # we do not include the code in the hash, might be mocked
-           #TODO include the code to some extent
+            continue  # we do not include the code in the hash, might be mocked
+            #TODO include the code to some extent
         if isinstance(val, Node):
             if not val.is_stored:
-               val.store()
-            val_hash = val.get_hash()         # only works if nodes are stored!
+                val.store()
+            val_hash = val.get_hash()  # only works if nodes are stored!
             input_nodes.append(val)
         else:
             val_hash = make_hash(val)
@@ -66,14 +63,15 @@ def get_hash_process(builder, input_nodes=[]):
 
     return bui_hash, input_nodes
 
+
 ####
 
 #### fixtures
 
+
 @pytest.fixture(scope='function')
 def export_cache():
     """Fixture to export an AiiDA graph from a given node"""
-
     def _export_cache(node, savepath, overwrite=True):
         """
         Function to export an AiiDA graph from a given node.
@@ -90,10 +88,12 @@ def export_cache():
             to_export = node
         else:
             to_export = [node]
-        export(to_export, outfile=full_export_path, overwrite=overwrite,
-               include_comments=True)      # extras are automatically
+        export(
+            to_export, outfile=full_export_path, overwrite=overwrite, include_comments=True
+        )  # extras are automatically
 
     return _export_cache
+
 
 # Do we always want to use hash_code_by_entrypoint here?
 @pytest.fixture(scope='function')
@@ -110,14 +110,14 @@ def load_cache(hash_code_by_entrypoint):
             if no path_to_cache is given tries to guess it.
         """
         from aiida.tools.importexport import import_data
-        from aiida.orm.querybuilder import QueryBuilder
-        from aiida.orm import ProcessNode
 
         if path_to_cache is None:
             if node is None:
-                raise ValueError("Node argument can not be None "
-                                 "if no explicit 'path_to_cache' is specified")
-            else:    # create path from node
+                raise ValueError(
+                    "Node argument can not be None "
+                    "if no explicit 'path_to_cache' is specified"
+                )
+            else:  # create path from node
                 pass
                 # get default data dir
                 # get hash for give node
@@ -135,9 +135,14 @@ def load_cache(hash_code_by_entrypoint):
                     file_full_import_path = os.path.join(full_import_path, filename)
                     # we curretly assume all files are valid aiida exports...
                     # maybe check if valid aiida export, or catch exception
-                    import_data(file_full_import_path, extras_mode_existing='ncu', extras_mode_new='import')
-            else: # Should never get there
-                raise OSError("Path: {} to be imported exists, but is neither a file or directory.".format(full_import_path))
+                    import_data(
+                        file_full_import_path, extras_mode_existing='ncu', extras_mode_new='import'
+                    )
+            else:  # Should never get there
+                raise OSError(
+                    "Path: {} to be imported exists, but is neither a file or directory.".
+                    format(full_import_path)
+                )
         else:
             raise OSError("File: {} to be imported does not exist.".format(full_import_path))
 
@@ -146,7 +151,7 @@ def load_cache(hash_code_by_entrypoint):
         # this way we use the full caching mechanism of aiida-core.
         # currently this should only cache CalcJobNodes
         qb = QueryBuilder()
-        qb.append(ProcessNode, tag='node') # query for all ProcesNodes
+        qb.append(ProcessNode, tag='node')  # query for all ProcesNodes
         to_hash = qb.all()
         for node1 in to_hash:
             node1[0].rehash()
@@ -165,9 +170,6 @@ def with_export_cache(export_cache, load_cache):
         """
         Function
         """
-        from aiida.manage.caching import enable_caching
-        from aiida.orm import CalcJobNode
-        from aiida.orm.querybuilder import QueryBuilder
 
         # check and load export
         export_exists = os.path.isfile(data_dir_abspath)
@@ -180,8 +182,7 @@ def with_export_cache(export_cache, load_cache):
         else:
             identifier = calculation_class.build_process_type()
         with enable_caching(identifier=identifier):
-            yield # now the test runs
-
+            yield  # now the test runs
 
         # This is executed after the test
         if not export_exists:
@@ -193,12 +194,13 @@ def with_export_cache(export_cache, load_cache):
                 queryclass = CalcJobNode
             else:
                 queryclass = calculation_class
-            qb = QueryBuilder()
-            qb.append(queryclass, tag='node') # query for CalcJobs nodes
-            to_export = [entry[0] for entry in qb.all()]
+            qub = QueryBuilder()
+            qub.append(queryclass, tag='node')  # query for CalcJobs nodes
+            to_export = [entry[0] for entry in qub.all()]
             export_cache(node=to_export, savepath=data_dir_abspath)
 
     return _with_export_cache
+
 
 @pytest.fixture
 def hash_code_by_entrypoint(monkeypatch):
@@ -206,17 +208,17 @@ def hash_code_by_entrypoint(monkeypatch):
     Monkeypatch .get_objects_to_hash of Code and CalcJobNodes of aiida-core
     to not include the uuid of the computer and less information of the code node in the hash
     """
-    from aiida.orm import Code, CalcJobNode
     from aiida.common.links import LinkType
 
-    def mock_get_objects_to_hash(self):
-        #return ['fleur.fleur', 'aiida-localhost-test']
+    def mock_objects_to_hash_code(self):
+        """
+        Return a list of objects which should be included in the hash of a Code node
+        """
         return [self.get_attribute(key='input_plugin'), self.get_computer_name()]
 
-
-    def mock_get_objects_to_hash_calcjob(self):
+    def mock_objects_to_hash_calcjob(self):
         """
-        Return a list of objects which should be included in the hash.
+        Return a list of objects which should be included in the hash of a CalcJobNode.
         code from aiida-core, only self.computer.uuid is commented out
         """
         from importlib import import_module
@@ -224,23 +226,21 @@ def hash_code_by_entrypoint(monkeypatch):
             import_module(self.__module__.split('.', 1)[0]).__version__,
             {
                 key: val
-                for key, val in self.attributes_items()
-                if key not in self._hash_ignored_attributes and key not in
-                self._updatable_attributes  # pylint: disable=unsupported-membership-test
+                for key, val in self.attributes_items() if key not in self._hash_ignored_attributes
+                and key not in self._updatable_attributes  # pylint: disable=unsupported-membership-test
             },
             #self.computer.uuid if self.computer is not None else None,  # pylint: disable=no-member
             {
                 entry.link_label: entry.node.get_hash()
-                for entry in self.get_incoming(link_type=(LinkType.INPUT_CALC, LinkType.INPUT_WORK))
+                for entry in
+                self.get_incoming(link_type=(LinkType.INPUT_CALC, LinkType.INPUT_WORK))
                 if entry.link_label not in self._hash_ignored_inputs
             }
         ]
         return objects
 
-    monkeypatch.setattr(Code, "_get_objects_to_hash", mock_get_objects_to_hash)
-
-    monkeypatch.setattr(CalcJobNode, "_get_objects_to_hash", mock_get_objects_to_hash_calcjob)
-
+    monkeypatch.setattr(Code, "_get_objects_to_hash", mock_objects_to_hash_code)
+    monkeypatch.setattr(CalcJobNode, "_get_objects_to_hash", mock_objects_to_hash_calcjob)
 
 
 @pytest.fixture(scope='function')
@@ -248,13 +248,12 @@ def run_with_cache(export_cache, load_cache):
     """
     Fixture to automatically import an aiida graph for a given process builder.
     """
-
     def _run_with_cache(
-        builder: ProcessBuilder, #aiida process builder class, or dict, if process class is given
-        process_class = None,
+        builder: ty.Union[dict, ProcessBuilder
+                          ],  #aiida process builder class, or dict, if process class is given
+        process_class=None,
         label: str = '',
-        data_dir: ty.Union[str, pathlib.Path] = None,
-        #ignore_nodes: ty.Iterable[str] = ('_aiidasubmit.sh', )
+        data_dir: ty.Union[str, pathlib.Path] = 'data_dir',
     ):
         """
         Function, which checks if a aiida export for a given Process builder exists,
@@ -273,22 +272,12 @@ def run_with_cache(export_cache, load_cache):
         # needed?
         """
 
-        from aiida.common.hashing import make_hash
-        from aiida.orm import ProcessNode, QueryBuilder, Node, Code, load_node
-        from aiida.tools.importexport import import_data
-        from aiida.tools.importexport import export
-        from aiida.engine import run_get_node
-        from aiida.manage.caching import enable_caching
-        from aiida.manage.caching import get_use_cache
-
         cache_exists = False
-        if data_dir is None:
-            cwd = pathlib.Path(os.getcwd())               # Might be not the best idea.
-            data_dir = (cwd / 'data_dir')                 # TODO: get from config?
-
+        if data_dir is 'data_dir':
+            cwd = pathlib.Path(os.getcwd())  # Might be not the best idea.
+            data_dir = (cwd / 'data_dir')  # TODO: get from config?
 
         bui_hash, input_nodes = get_hash_process(builder)
-        print(bui_hash)
 
         if process_class is None:
             process_class = builder.process_class
@@ -307,7 +296,7 @@ def run_with_cache(export_cache, load_cache):
             load_cache(path_to_cache=full_import_path)
 
         # now run process/workchain whatever
-        with enable_caching(): # should enable caching globally in this python interpreter
+        with enable_caching():  # should enable caching globally in this python interpreter
             #yield #test is running
             #res, resnode = run_get_node(builder)
             res, resnode = run_get_node(process_class, **builder)
@@ -320,12 +309,12 @@ def run_with_cache(export_cache, load_cache):
             # is the db already cleaned?
             # since we do not the stored process node we try to get it from the inputs,
             # i.e to which node they are all connected, with the lowest common pk
-            union = set()
+            union_pk = ty.Set()
             for node in input_nodes:
-                pks = set([ent.node.pk for ent in node.get_outgoing().all()])
-                union = union.union(pks)
-            if len(union) != 0:
-                process_node_pk = min(union)
+                pks = ty.Set([ent.node.pk for ent in node.get_outgoing().all()])
+                union_pk = union_pk.union(pks)
+            if len(union_pk) != 0:
+                process_node_pk = min(union_pk)
                 #export data to reuse it later
                 export_cache(node=load_node(process_node_pk), savepath=full_import_path)
             else:
@@ -334,4 +323,5 @@ def run_with_cache(export_cache, load_cache):
             #export_cache(node=resnode, savepath=full_import_path)
 
         return res, resnode
+
     return _run_with_cache
