@@ -42,5 +42,3 @@ def generate_diff_inputs(datadir):
         return inputs
 
     return _generate_diff_inputs
-
-
