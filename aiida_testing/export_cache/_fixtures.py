@@ -124,11 +124,11 @@ def load_cache(hash_code_by_entrypoint):
                     "Node argument can not be None "
                     "if no explicit 'path_to_cache' is specified"
                 )
-            else:  # create path from node
-                pass
-                # get default data dir
-                # get hash for give node
-                # construct path from that
+            #else:  # create path from node
+            #    pass
+            #    # get default data dir
+            #    # get hash for give node
+            #    # construct path from that
         else:
             # TODO: what about relative path to data_dir
             full_import_path = pathlib.Path(path_to_cache)
@@ -282,14 +282,14 @@ def run_with_cache(export_cache, load_cache):
         """
 
         cache_exists = False
-        if data_dir is 'data_dir':
+        if data_dir == 'data_dir':
             cwd = pathlib.Path(os.getcwd())  # Might be not the best idea.
             data_dir = (cwd / 'data_dir')  # TODO: get from config?
 
         bui_hash, input_nodes = get_hash_process(builder)
 
         if process_class is None:  # and isinstance(builder, dict):
-            process_class = builder.process_class  # type: ignore has no attribute
+            process_class = builder.process_class  # type: ignore
             # we assume ProcessBuilder, since type(ProcessBuilder) is abc
         #else:
         #    raise TypeError(
@@ -325,7 +325,7 @@ def run_with_cache(export_cache, load_cache):
             # i.e to which node they are all connected, with the lowest common pk
             union_pk: ty.Set[int] = set()
             for node in input_nodes:
-                pks = set([ent.node.pk for ent in node.get_outgoing().all()])
+                pks = {ent.node.pk for ent in node.get_outgoing().all()}
                 union_pk = union_pk.union(pks)
             if len(union_pk) != 0:
                 process_node_pk = min(union_pk)

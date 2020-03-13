@@ -12,9 +12,9 @@ from aiida.engine import WorkChain
 from aiida.engine import ToContext
 from aiida.orm import Node
 from aiida.orm.querybuilder import QueryBuilder
+from aiida_diff.calculations import DiffCalculation
+from aiida_diff.data import DiffParameters
 
-DiffParameters = DataFactory('diff')
-DiffCalculation = CalculationFactory('diff')
 CALC_ENTRY_POINT = 'diff'
 
 #### diff workchain for basic tests
@@ -116,7 +116,7 @@ def test_mock_hash_codes(mock_code_factory, clear_database, hash_code_by_entrypo
 
 @pytest.mark.timeout(60, method='thread')
 def test_run_with_cache(
-    aiida_local_code_factory,  #mock_code_factory, 
+    aiida_local_code_factory,  #mock_code_factory,
     generate_diff_inputs,
     run_with_cache,
     hash_code_by_entrypoint,
@@ -161,7 +161,7 @@ def test_run_with_cache(
 
 @pytest.mark.timeout(60, method='thread')
 def test_with_export_cache(
-    aiida_local_code_factory,  #mock_code_factory, 
+    aiida_local_code_factory,  #mock_code_factory,
     generate_diff_inputs,
     with_export_cache,
     hash_code_by_entrypoint,
