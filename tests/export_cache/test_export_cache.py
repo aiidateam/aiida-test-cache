@@ -110,7 +110,7 @@ def test_mock_hash_codes(mock_code_factory, clear_database, hash_code_by_entrypo
         ignore_files=('_aiidasubmit.sh', 'file*')
     )
     objs = mock_code._get_objects_to_hash()
-    assert objs == [mock_code.get_attribute(key='input_plugin'), mock_code.get_computer_name()]
+    assert objs == [mock_code.get_attribute(key='input_plugin')]  #, mock_code.get_computer_name()]
 
 
 @pytest.mark.timeout(60, method='thread')
@@ -153,10 +153,10 @@ def test_run_with_cache(
     diffjob = node.get_outgoing().get_node_by_label('CALL')
     cache_src = diffjob.get_cache_source()
     print(diffjob._get_objects_to_hash())  # in case of failure to compare
-    calc_hash_s = '833070207922ee3dccbc477db7bbbf871d9df68bef2624604144f76b0edc6f0a'
+    calc_hash_s = '96535a026a714a51855ff788c6646badb7e35a4fb483526bf90474a9eaaa0847'
     calc_hash = diffjob.get_hash()
     assert calc_hash == calc_hash_s
-    assert cache_src is not None
+    assert cache_src is not None  # Hint: maybe rerun, if the export was just created
 
 
 @pytest.mark.timeout(60, method='thread')
@@ -201,7 +201,7 @@ def test_with_export_cache(
     diffjob = node.get_outgoing().get_node_by_label('CALL')
     cache_src = diffjob.get_cache_source()
     print(diffjob._get_objects_to_hash())  # in case of failure to compare
-    calc_hash_s = '833070207922ee3dccbc477db7bbbf871d9df68bef2624604144f76b0edc6f0a'
+    calc_hash_s = '96535a026a714a51855ff788c6646badb7e35a4fb483526bf90474a9eaaa0847'
     calc_hash = diffjob.get_hash()
     assert calc_hash == calc_hash_s
-    assert cache_src is not None
+    assert cache_src is not None  # Hint: maybe rerun, if the export was just created

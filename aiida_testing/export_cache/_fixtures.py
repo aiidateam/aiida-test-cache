@@ -12,7 +12,7 @@ import typing as ty
 import pytest
 from aiida.engine import run_get_node  #,ProcessBuilder
 from aiida.common.hashing import make_hash
-from aiida.orm import Node, Code, load_node
+from aiida.orm import Node, Code, load_node, Dict, SinglefileData, List, FolderData, RemoteData
 from aiida.orm import CalcJobNode, ProcessNode
 from aiida.orm.querybuilder import QueryBuilder
 from aiida.manage.caching import enable_caching
@@ -89,7 +89,6 @@ def export_cache(hash_code_by_entrypoint):
         # we rehash before the export
         qub = QueryBuilder()
         qub.append(ProcessNode)  # query for all ProcesNodes
-        qub.append(Code)
         to_hash = qub.all()
         for node1 in to_hash:
             node1[0].rehash()
@@ -226,7 +225,8 @@ def hash_code_by_entrypoint(monkeypatch):
         """
         Return a list of objects which should be included in the hash of a Code node
         """
-        return [self.get_attribute(key='input_plugin'), self.get_computer_name()]
+        # computer names are changed by aiida-core if imported and do not have same uuid.
+        return [self.get_attribute(key='input_plugin')]  #, self.get_computer_name()]
 
     def mock_objects_to_hash_calcjob(self):
         """
@@ -255,6 +255,36 @@ def hash_code_by_entrypoint(monkeypatch):
 
     monkeypatch.setattr(Code, "_get_objects_to_hash", mock_objects_to_hash_code)
     monkeypatch.setattr(CalcJobNode, "_get_objects_to_hash", mock_objects_to_hash_calcjob)
+
+    # for all other data, since they include the version
+
+    def mock_objects_to_hash(self):
+        """
+        Return a list of objects which should be included in the hash of all Nodes.
+        """
+        ignored = list(self._hash_ignored_attributes)  # pylint: disable=protected-access
+        ignored.append('version')
+        self._hash_ignored_attributes = tuple(ignored)  # pylint: disable=protected-access
+
+        objects = [
+            #importlib.import_module(self.__module__.split('.', 1)[0]).__version__,
+            {
+                key: val
+                for key, val in self.attributes_items() if key not in self._hash_ignored_attributes
+                and key not in self._updatable_attributes
+            },
+            #self._repository._get_base_folder(),
+            #self.computer.uuid if self.computer is not None else None
+        ]
+
+        return objects
+
+    # since we still want versioning for plugin datatypes and calcs we only monkeypatch aiida datatypes
+    classes_to_patch = [Dict, SinglefileData, List, FolderData, RemoteData]
+    for classe in classes_to_patch:
+        monkeypatch.setattr(classe, "_get_objects_to_hash", mock_objects_to_hash)
+
+    #BaseData, List, Array, ...
 
 
 @pytest.fixture(scope='function')
