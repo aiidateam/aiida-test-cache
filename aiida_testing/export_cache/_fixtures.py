@@ -3,12 +3,14 @@
 Defines pytest fixtures for automatically enable caching in tests and export aiida graphs if not existent.
 Meant to be useful for WorkChain tests.
 """
+# pylint: disable=unused-argument, protected-access, redefined-outer-name
+
 import os
 import hashlib
 import pathlib
 import typing as ty
 import pytest
-from aiida.engine import ProcessBuilder, run_get_node
+from aiida.engine import run_get_node  #,ProcessBuilder
 from aiida.common.hashing import make_hash
 from aiida.orm import Node, Code, load_node
 from aiida.orm import CalcJobNode, ProcessNode
@@ -40,14 +42,17 @@ def unnest_dict(nested_dict: dict) -> dict:
     return new_dict
 
 
-def get_hash_process(builder: dict, input_nodes: list = []):
+def get_hash_process(  # pylint: disable=dangerous-default-value
+    builder: dict,
+    input_nodes: list = []
+):
     """ creates a hash from a builder/dictionary of inputs"""
 
     # hashing the builder
     # currently workchains are not hashed in AiiDA so we create a hash for the filename
     unnest_builder = unnest_dict(builder)
     md5sum = hashlib.md5()
-    for key, val in sorted(unnest_builder.items()):
+    for key, val in sorted(unnest_builder.items()):  # pylint: disable=unused-variable
         if isinstance(val, Code):
             continue  # we do not include the code in the hash, might be mocked
             #TODO include the code to some extent
@@ -159,7 +164,6 @@ def load_cache(hash_code_by_entrypoint):
         # currently this should only cache CalcJobNodes
         qub = QueryBuilder()
         qub.append(ProcessNode)  # query for all ProcesNodes
-        qub.append(Code)
         to_hash = qub.all()
         for node1 in to_hash:
             node1[0].rehash()
@@ -237,9 +241,9 @@ def hash_code_by_entrypoint(monkeypatch):
             {
                 key: val
                 for key, val in self.attributes_items()
-                if key not in ignored and key not in self._updatable_attributes  # pylint: disable=unsupported-membership-test
+                if key not in ignored and key not in self._updatable_attributes
             },
-            #self.computer.uuid if self.computer is not None else None,  # pylint: disable=no-member
+            #self.computer.uuid if self.computer is not None else None,
             {
                 entry.link_label: entry.node.get_hash()
                 for entry in

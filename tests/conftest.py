@@ -4,9 +4,9 @@ Configuration file for pytest tests of aiida-testing.
 """
 import pytest
 
-pytest_plugins = [
+pytest_plugins = [   # pylint: disable=invalid-name
     'aiida.manage.tests.pytest_fixtures', 'aiida_testing.mock_code', 'aiida_testing.export_cache'
-]  # pylint: disable=invalid-name
+]
 
 
 @pytest.fixture

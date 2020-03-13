@@ -2,18 +2,17 @@
 """
 Test basic usage of the mock code on examples using aiida-diff.
 """
+# pylint: disable=unused-argument, protected-access
 
 import os
 import pytest
 
 from aiida.engine import run_get_node
-from aiida.plugins import CalculationFactory, DataFactory
 from aiida.engine import WorkChain
 from aiida.engine import ToContext
 from aiida.orm import Node
 from aiida.orm.querybuilder import QueryBuilder
 from aiida_diff.calculations import DiffCalculation
-from aiida_diff.data import DiffParameters
 
 CALC_ENTRY_POINT = 'diff'
 
@@ -153,6 +152,7 @@ def test_run_with_cache(
     #Test if cache was used?
     diffjob = node.get_outgoing().get_node_by_label('CALL')
     cache_src = diffjob.get_cache_source()
+    print(diffjob._get_objects_to_hash())  # in case of failure to compare
     calc_hash_s = '833070207922ee3dccbc477db7bbbf871d9df68bef2624604144f76b0edc6f0a'
     calc_hash = diffjob.get_hash()
     assert calc_hash == calc_hash_s
@@ -200,6 +200,7 @@ def test_with_export_cache(
     #Test if cache was used?
     diffjob = node.get_outgoing().get_node_by_label('CALL')
     cache_src = diffjob.get_cache_source()
+    print(diffjob._get_objects_to_hash())  # in case of failure to compare
     calc_hash_s = '833070207922ee3dccbc477db7bbbf871d9df68bef2624604144f76b0edc6f0a'
     calc_hash = diffjob.get_hash()
     assert calc_hash == calc_hash_s
