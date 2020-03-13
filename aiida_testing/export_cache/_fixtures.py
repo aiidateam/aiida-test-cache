@@ -23,7 +23,7 @@ __all__ = (
 #### utils
 
 
-def unnest_dict(nested_dict):
+def unnest_dict(nested_dict: dict) -> dict:
     """
     Returns a simple dictionary from a possible arbitray nested dictionary
     by adding keys in dot notation, rekrusively
@@ -40,7 +40,7 @@ def unnest_dict(nested_dict):
     return new_dict
 
 
-def get_hash_process(builder, input_nodes=[]):
+def get_hash_process(builder: dict, input_nodes: list = []):
     """ creates a hash from a builder/dictionary of inputs"""
 
     # hashing the builder
@@ -70,7 +70,7 @@ def get_hash_process(builder, input_nodes=[]):
 
 
 @pytest.fixture(scope='function')
-def export_cache():
+def export_cache(hash_code_by_entrypoint):
     """Fixture to export an AiiDA graph from a given node"""
     def _export_cache(node, savepath, overwrite=True):
         """
@@ -81,6 +81,13 @@ def export_cache():
         :param overwrite: bool, default=True, if existing export is overwritten
         """
         from aiida.tools.importexport import export
+        # we rehash before the export
+        qub = QueryBuilder()
+        qub.append(ProcessNode)  # query for all ProcesNodes
+        qub.append(Code)
+        to_hash = qub.all()
+        for node1 in to_hash:
+            node1[0].rehash()
 
         # TODO: if relativ savepath get default data dir
         full_export_path = savepath
@@ -150,9 +157,10 @@ def load_cache(hash_code_by_entrypoint):
         # for this we rehash all process nodes
         # this way we use the full caching mechanism of aiida-core.
         # currently this should only cache CalcJobNodes
-        qb = QueryBuilder()
-        qb.append(ProcessNode, tag='node')  # query for all ProcesNodes
-        to_hash = qb.all()
+        qub = QueryBuilder()
+        qub.append(ProcessNode)  # query for all ProcesNodes
+        qub.append(Code)
+        to_hash = qub.all()
         for node1 in to_hash:
             node1[0].rehash()
 
@@ -221,13 +229,15 @@ def hash_code_by_entrypoint(monkeypatch):
         Return a list of objects which should be included in the hash of a CalcJobNode.
         code from aiida-core, only self.computer.uuid is commented out
         """
-        from importlib import import_module
+        #from importlib import import_module
+        ignored = list(self._hash_ignored_attributes)
+        ignored.append('version')
         objects = [
-            import_module(self.__module__.split('.', 1)[0]).__version__,
+            #import_module(self.__module__.split('.', 1)[0]).__version__,
             {
                 key: val
-                for key, val in self.attributes_items() if key not in self._hash_ignored_attributes
-                and key not in self._updatable_attributes  # pylint: disable=unsupported-membership-test
+                for key, val in self.attributes_items()
+                if key not in ignored and key not in self._updatable_attributes  # pylint: disable=unsupported-membership-test
             },
             #self.computer.uuid if self.computer is not None else None,  # pylint: disable=no-member
             {
@@ -249,8 +259,7 @@ def run_with_cache(export_cache, load_cache):
     Fixture to automatically import an aiida graph for a given process builder.
     """
     def _run_with_cache(
-        builder: ty.Union[dict, ProcessBuilder
-                          ],  #aiida process builder class, or dict, if process class is given
+        builder: dict,  #aiida process builder class, or dict, if process class is given
         process_class=None,
         label: str = '',
         data_dir: ty.Union[str, pathlib.Path] = 'data_dir',
@@ -279,8 +288,13 @@ def run_with_cache(export_cache, load_cache):
 
         bui_hash, input_nodes = get_hash_process(builder)
 
-        if process_class is None:
-            process_class = builder.process_class
+        if process_class is None:  # and isinstance(builder, dict):
+            process_class = builder.process_class  # type: ignore has no attribute
+            # we assume ProcessBuilder, since type(ProcessBuilder) is abc
+        #else:
+        #    raise TypeError(
+        #        'builder has to be of type ProcessBuilder if no process_class is specified'
+        #    )
         name = label + str(process_class).split('.')[-1].strip("'>") + '-nodes-' + bui_hash
         print(name)
 
@@ -309,16 +323,16 @@ def run_with_cache(export_cache, load_cache):
             # is the db already cleaned?
             # since we do not the stored process node we try to get it from the inputs,
             # i.e to which node they are all connected, with the lowest common pk
-            union_pk = ty.Set()
+            union_pk: ty.Set[int] = set()
             for node in input_nodes:
-                pks = ty.Set([ent.node.pk for ent in node.get_outgoing().all()])
+                pks = set([ent.node.pk for ent in node.get_outgoing().all()])
                 union_pk = union_pk.union(pks)
             if len(union_pk) != 0:
                 process_node_pk = min(union_pk)
                 #export data to reuse it later
                 export_cache(node=load_node(process_node_pk), savepath=full_import_path)
             else:
-                print('could not find the process node')
+                print("could not find the process node, don't know what to export")
             # if no yield
             #export_cache(node=resnode, savepath=full_import_path)
 

@@ -20,7 +20,7 @@ CALC_ENTRY_POINT = 'diff'
 #### diff workchain for basic tests
 
 
-class DiffWorkChain(WorkChain):
+class DiffWorkChain(WorkChain):  # type: ignore
     """
     Very simple workchain which wraps a diff calculation for testing purposes
     """
@@ -101,7 +101,7 @@ def test_load_cache(load_cache, clear_database):
     assert n_nodes == 9
 
 
-def test_mock_hash_codes(mock_code_factory, clear_database, hash_code_by_entrypoint):  # pylint: disable=redefined-outer-name
+def test_mock_hash_codes(mock_code_factory, clear_database, hash_code_by_entrypoint):
     """test if mock of _get_objects_to_hash works for Code and Calcs"""
 
     mock_code = mock_code_factory(
@@ -116,20 +116,26 @@ def test_mock_hash_codes(mock_code_factory, clear_database, hash_code_by_entrypo
 
 @pytest.mark.timeout(60, method='thread')
 def test_run_with_cache(
-    mock_code_factory, generate_diff_inputs, run_with_cache, hash_code_by_entrypoint, clear_database
-):  # pylint: disable=redefined-outer-name
+    aiida_local_code_factory,  #mock_code_factory, 
+    generate_diff_inputs,
+    run_with_cache,
+    hash_code_by_entrypoint,
+    clear_database
+):
     """
     Basic test of the run with cache fixture functionality,
     should run workchain with cached calcjob
     """
     inputs = {'diff': generate_diff_inputs()}
-    mock_code = mock_code_factory(
-        label='diff',
-        data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
-        entry_point=CALC_ENTRY_POINT,
-        ignore_files=('_aiidasubmit.sh', 'file*')
-    )
-    inputs['diff']['code'] = mock_code
+    #mock_code = mock_code_factory(
+    #    label='diff',
+    #    data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
+    #    entry_point=CALC_ENTRY_POINT,
+    #    ignore_files=('_aiidasubmit.sh', 'file*')
+    #)
+    diff_code = aiida_local_code_factory(executable='diff', entry_point='diff')
+    diff_code.store()
+    inputs['diff']['code'] = diff_code
     #builder = DiffWorkChain.get_builder()
     data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'caches')
     #run_with_cache(builder=builder, data_dir=data_dir)
@@ -147,7 +153,7 @@ def test_run_with_cache(
     #Test if cache was used?
     diffjob = node.get_outgoing().get_node_by_label('CALL')
     cache_src = diffjob.get_cache_source()
-    calc_hash_s = '4acf4c1e3550431271ed2ead56ad2963b28d451137eb70e9e69d25094314311a'
+    calc_hash_s = '833070207922ee3dccbc477db7bbbf871d9df68bef2624604144f76b0edc6f0a'
     calc_hash = diffjob.get_hash()
     assert calc_hash == calc_hash_s
     assert cache_src is not None
@@ -155,26 +161,31 @@ def test_run_with_cache(
 
 @pytest.mark.timeout(60, method='thread')
 def test_with_export_cache(
-    mock_code_factory, generate_diff_inputs, with_export_cache, hash_code_by_entrypoint,
+    aiida_local_code_factory,  #mock_code_factory, 
+    generate_diff_inputs,
+    with_export_cache,
+    hash_code_by_entrypoint,
     clear_database
-):  # pylint: disable=redefined-outer-name
+):
     """
     Basic test of the run with cache fixture functionality,
     should run workchain with cached calcjob
     """
 
     inputs = {'diff': generate_diff_inputs()}
-    mock_code = mock_code_factory(
-        label='diff',
-        data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
-        entry_point=CALC_ENTRY_POINT,
-        ignore_files=('_aiidasubmit.sh', 'file*')
-    )
-    inputs['diff']['code'] = mock_code
+    #mock_code = mock_code_factory(
+    #    label='diff',
+    #    data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
+    #    entry_point=CALC_ENTRY_POINT,
+    #    ignore_files=('_aiidasubmit.sh', 'file*')
+    #)
+    diff_code = aiida_local_code_factory(executable='diff', entry_point='diff')
+    diff_code.store()
+    inputs['diff']['code'] = diff_code
     data_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), 'caches/test_workchain.tar.gz'
     )
-    with with_export_cache(data_dir_abspath=data_dir, calculation_class=DiffWorkChain):
+    with with_export_cache(data_dir_abspath=data_dir, calculation_class=DiffCalculation):
         res, node = run_get_node(DiffWorkChain, **inputs)
 
     res_diff = '''1,2c1
@@ -189,7 +200,7 @@ def test_with_export_cache(
     #Test if cache was used?
     diffjob = node.get_outgoing().get_node_by_label('CALL')
     cache_src = diffjob.get_cache_source()
-    calc_hash_s = '4acf4c1e3550431271ed2ead56ad2963b28d451137eb70e9e69d25094314311a'
+    calc_hash_s = '833070207922ee3dccbc477db7bbbf871d9df68bef2624604144f76b0edc6f0a'
     calc_hash = diffjob.get_hash()
     assert calc_hash == calc_hash_s
     assert cache_src is not None
