@@ -346,7 +346,7 @@ def run_with_cache(export_cache, load_cache):
         # check existence
         full_import_path = pathlib.Path(data_dir) / (name + '.tar.gz')
         # make sure the path is absolute (this is needed by export_cache)
-        full_import_path  = full_import_path.absolute()
+        full_import_path = full_import_path.absolute()
         print(full_import_path)
         if full_import_path.exists():
             cache_exists = True
