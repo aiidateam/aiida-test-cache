@@ -144,7 +144,7 @@ def load_cache(hash_code_by_entrypoint):
             #    # get hash for give node
             #    # construct path from that
         else:
-            # TODO: what about relative path to data_dir
+            # relative paths given will be completed with cwd
             full_import_path = pathlib.Path(path_to_cache)
 
         if full_import_path.exists():
@@ -188,9 +188,9 @@ def with_export_cache(export_cache, load_cache):
     Export the provenance of all calcjobs nodes within the test.
     """
     @contextmanager
-    def _with_export_cache(data_dir_abspath, calculation_class=None):
+    def _with_export_cache(data_dir_abspath, calculation_class=None, overwrite=False):
         """
-        Function
+        Contextmanager to run calculation within, which aiida graph gets exported
         """
 
         # check and load export
@@ -207,7 +207,7 @@ def with_export_cache(export_cache, load_cache):
             yield  # now the test runs
 
         # This is executed after the test
-        if not export_exists:
+        if not export_exists or overwrite:
             # in case of yield: is the db already cleaned?
             # create export of all calculation_classes
             # Another solution out of this is to check the time before and
@@ -219,7 +219,7 @@ def with_export_cache(export_cache, load_cache):
             qub = QueryBuilder()
             qub.append(queryclass, tag='node')  # query for CalcJobs nodes
             to_export = [entry[0] for entry in qub.all()]
-            export_cache(node=to_export, savepath=data_dir_abspath)
+            export_cache(node=to_export, savepath=data_dir_abspath, overwrite=overwrite)
 
     return _with_export_cache
 
@@ -311,6 +311,7 @@ def run_with_cache(export_cache, load_cache):
         process_class=None,
         label: str = '',
         data_dir: ty.Union[str, pathlib.Path] = 'data_dir',
+        overwrite: bool = False,
     ):
         """
         Function, which checks if a aiida export for a given Process builder exists,
@@ -324,16 +325,12 @@ def run_with_cache(export_cache, load_cache):
         data_dir: optional
             Absolute path of the directory where the exported workchain graphs are
             stored.
-
-        ignore_nodes : list string, ignore input nodes with these labels/link labels to ignore in hash.
+        overwrite: enforce exporting of a new cache
+        #ignore_nodes : list string, ignore input nodes with these labels/link labels to ignore in hash.
         # needed?
         """
 
         cache_exists = False
-        if data_dir == 'data_dir':
-            cwd = pathlib.Path(os.getcwd())  # Might be not the best idea.
-            data_dir = (cwd / 'data_dir')  # TODO: get from config?
-
         bui_hash, input_nodes = get_hash_process(builder)  # pylint: disable=unused-variable
 
         if process_class is None:  # and isinstance(builder, dict):
@@ -347,10 +344,9 @@ def run_with_cache(export_cache, load_cache):
         print(name)
 
         # check existence
-        full_import_path = str(data_dir) + '/' + name + '.tar.gz'
+        full_import_path = pathlib.Path(data_dir) / (name + '.tar.gz')
         print(full_import_path)
-        cache_path = pathlib.Path(full_import_path)
-        if cache_path.exists():
+        if full_import_path.exists():
             cache_exists = True
 
         if cache_exists:
@@ -364,7 +360,7 @@ def run_with_cache(export_cache, load_cache):
             res, resnode = run_get_node(process_class, **builder)
 
         # This is executed after the test
-        if not cache_exists:
+        if not cache_exists or overwrite:
             # TODO create datadir if not existent
 
             # in case of yield:
@@ -383,7 +379,7 @@ def run_with_cache(export_cache, load_cache):
             #    print("could not find the process node, don't know what to export")
 
             # if no yield
-            export_cache(node=resnode, savepath=full_import_path)
+            export_cache(node=resnode, savepath=full_import_path, overwrite=overwrite)
 
         return res, resnode
 
