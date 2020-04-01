@@ -10,10 +10,11 @@ import hashlib
 import pathlib
 import typing as ty
 import pytest
-from aiida.engine import run_get_node  #,ProcessBuilder
+from aiida.engine import run_get_node
+from aiida.engine import ProcessBuilderNamespace
 from aiida.common.hashing import make_hash
-from aiida.orm import Node, Code, load_node, Dict, SinglefileData, List, FolderData, RemoteData
-from aiida.orm import CalcJobNode, ProcessNode
+from aiida.orm import Node, Code, Dict, SinglefileData, List, FolderData, RemoteData
+from aiida.orm import CalcJobNode, ProcessNode  #, load_node
 from aiida.orm.querybuilder import QueryBuilder
 from aiida.manage.caching import enable_caching
 from contextlib import contextmanager
@@ -25,25 +26,25 @@ __all__ = (
 #### utils
 
 
-def unnest_dict(nested_dict: dict) -> dict:
+def unnest_dict(nested_dict: ty.Union[dict, ProcessBuilderNamespace]) -> dict:  # type: ignore
     """
     Returns a simple dictionary from a possible arbitray nested dictionary
-    by adding keys in dot notation, rekrusively
+    or Aiida ProcessBuilderNamespace by adding keys in dot notation, rekrusively
     """
     new_dict = {}
     for key, val in nested_dict.items():
-        if isinstance(val, dict):
+        if isinstance(val, (dict, ProcessBuilderNamespace)):
             unval = unnest_dict(val)  #rekursive!
             for key2, val2 in unval.items():
                 key_new = str(key) + '.' + str(key2)
                 new_dict[key_new] = val2
         else:
-            new_dict[str(key)] = val
+            new_dict[str(key)] = val  # type: ignore
     return new_dict
 
 
-def get_hash_process(  # pylint: disable=dangerous-default-value
-    builder: dict,
+def get_hash_process(  # type: ignore # pylint: disable=dangerous-default-value
+    builder: ty.Union[dict, ProcessBuilderNamespace],
     input_nodes: list = []
 ):
     """ creates a hash from a builder/dictionary of inputs"""
@@ -76,32 +77,40 @@ def get_hash_process(  # pylint: disable=dangerous-default-value
 
 @pytest.fixture(scope='function')
 def export_cache(hash_code_by_entrypoint):
-    """Fixture to export an AiiDA graph from a given node"""
-    def _export_cache(node, savepath, overwrite=True):
+    """Fixture to export an AiiDA graph from given node(s)"""
+    def _export_cache(node, savepath, default_data_dir=None, overwrite=True):
         """
         Function to export an AiiDA graph from a given node.
+        Currenlty, uses the export functionalities of aiida-core
 
         :param node: AiiDA node which graph is to be exported, or list of nodes
         :param savepath: str or path where the export file is to be saved
         :param overwrite: bool, default=True, if existing export is overwritten
         """
         from aiida.tools.importexport import export
-        # we rehash before the export
+
+        # we rehash before the export, what goes in the hash is monkeypatched
         qub = QueryBuilder()
-        qub.append(ProcessNode)  # query for all ProcesNodes
+        qub.append(ProcessNode)  # rehash all ProcesNodes
         to_hash = qub.all()
         for node1 in to_hash:
             node1[0].rehash()
 
-        # TODO: if relativ savepath get default data dir
-        full_export_path = savepath
+        if os.path.isabs(savepath):
+            full_export_path = savepath
+        else:
+            if default_data_dir is None:
+                default_data_dir = os.path.join(os.getcwd(), 'data_dir')  # May not be best idea
+            full_export_path = os.path.join(default_data_dir, savepath)
+            #print(full_export_path)
+
         if isinstance(node, list):
             to_export = node
         else:
             to_export = [node]
         export(
             to_export, outfile=full_export_path, overwrite=overwrite, include_comments=True
-        )  # extras are automatically
+        )  # extras are automatically included
 
     return _export_cache
 
@@ -119,6 +128,7 @@ def load_cache(hash_code_by_entrypoint):
 
         :param node: AiiDA node which cache to load,
             if no path_to_cache is given tries to guess it.
+        :raises : OSError, if import file non existent
         """
         from aiida.tools.importexport import import_data
 
@@ -173,8 +183,9 @@ def load_cache(hash_code_by_entrypoint):
 @pytest.fixture(scope='function')
 def with_export_cache(export_cache, load_cache):
     """
-    Fixture to use in a with() environment within a test to enable caching within the with.
+    Fixture to use in a with() environment within a test to enable caching in the with-statement.
     Requires to provide an absolutpath to the export file to load or export to.
+    Export the provenance of all calcjobs nodes within the test.
     """
     @contextmanager
     def _with_export_cache(data_dir_abspath, calculation_class=None):
@@ -233,6 +244,7 @@ def hash_code_by_entrypoint(monkeypatch):
         Return a list of objects which should be included in the hash of a CalcJobNode.
         code from aiida-core, only self.computer.uuid is commented out
         """
+        #from pprint import pprint
         #from importlib import import_module
         ignored = list(self._hash_ignored_attributes)
         ignored.append('version')
@@ -251,6 +263,7 @@ def hash_code_by_entrypoint(monkeypatch):
                 if entry.link_label not in self._hash_ignored_inputs
             }
         ]
+        #pprint('{} objects to hash calcjob: {}'.format(type(self), objects))
         return objects
 
     monkeypatch.setattr(Code, "_get_objects_to_hash", mock_objects_to_hash_code)
@@ -276,7 +289,7 @@ def hash_code_by_entrypoint(monkeypatch):
             #self._repository._get_base_folder(),
             #self.computer.uuid if self.computer is not None else None
         ]
-
+        #print('{} objects to hash: {}'.format(type(self), objects))
         return objects
 
     # since we still want versioning for plugin datatypes and calcs we only monkeypatch aiida datatypes
@@ -292,8 +305,9 @@ def run_with_cache(export_cache, load_cache):
     """
     Fixture to automatically import an aiida graph for a given process builder.
     """
-    def _run_with_cache(
-        builder: dict,  #aiida process builder class, or dict, if process class is given
+    def _run_with_cache( # type: ignore
+        builder: ty.Union[dict, ProcessBuilderNamespace
+                          ],  #aiida process builder class, or dict, if process class is given
         process_class=None,
         label: str = '',
         data_dir: ty.Union[str, pathlib.Path] = 'data_dir',
@@ -320,7 +334,7 @@ def run_with_cache(export_cache, load_cache):
             cwd = pathlib.Path(os.getcwd())  # Might be not the best idea.
             data_dir = (cwd / 'data_dir')  # TODO: get from config?
 
-        bui_hash, input_nodes = get_hash_process(builder)
+        bui_hash, input_nodes = get_hash_process(builder)  # pylint: disable=unused-variable
 
         if process_class is None:  # and isinstance(builder, dict):
             process_class = builder.process_class  # type: ignore
@@ -357,18 +371,19 @@ def run_with_cache(export_cache, load_cache):
             # is the db already cleaned?
             # since we do not the stored process node we try to get it from the inputs,
             # i.e to which node they are all connected, with the lowest common pk
-            union_pk: ty.Set[int] = set()
-            for node in input_nodes:
-                pks = {ent.node.pk for ent in node.get_outgoing().all()}
-                union_pk = union_pk.union(pks)
-            if len(union_pk) != 0:
-                process_node_pk = min(union_pk)
-                #export data to reuse it later
-                export_cache(node=load_node(process_node_pk), savepath=full_import_path)
-            else:
-                print("could not find the process node, don't know what to export")
+            #union_pk: ty.Set[int] = set()
+            #for node in input_nodes:
+            #    pks = {ent.node.pk for ent in node.get_outgoing().all()}
+            #    union_pk = union_pk.union(pks)
+            #if len(union_pk) != 0:
+            #    process_node_pk = min(union_pk)
+            #    #export data to reuse it later
+            #    export_cache(node=load_node(process_node_pk), savepath=full_import_path)
+            #else:
+            #    print("could not find the process node, don't know what to export")
+
             # if no yield
-            #export_cache(node=resnode, savepath=full_import_path)
+            export_cache(node=resnode, savepath=full_import_path)
 
         return res, resnode
 
