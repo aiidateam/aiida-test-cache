@@ -12,6 +12,9 @@ jobs:
         python-version: [3.6, 3.9]
         backend: ['django']
         editable_install_option: ['-e', '']
+        exclude:
+        - python-version: 3.6
+          editable_install_option: ''
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
