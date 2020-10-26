@@ -21,15 +21,3 @@ repos:
     types: [file, python]
     language: system
     exclude: '^(docs/)|(examples/)|(utils/fastentrypoints.py)'
-
-  - id: version-number
-    name: Check version numbers
-    entry: python ./utils/validate_version_consistency.py
-    language: system
-    files: >-
-      (?x)^(
-        setup.json|
-        utils/validate_version_consistency.py|
-        aiida_testing/__init__.py
-      )$
-    pass_filenames: false
