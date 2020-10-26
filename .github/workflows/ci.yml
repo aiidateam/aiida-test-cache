@@ -9,8 +9,9 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        python-version: [3.6, 3.8]
+        python-version: [3.6, 3.9]
         backend: ['django']
+        editable_install_option: ['-e', '']
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -31,7 +32,7 @@ jobs:
     - name: Install python dependencies
       run: |
         pip install --upgrade pip
-        pip install -e .[testing]
+        pip install ${{ matrix.editable_install_option }} .[testing]
         reentry scan -r aiida
 
     - name: Run test suite
