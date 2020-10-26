@@ -7,7 +7,7 @@ import setuptools
 from setuptools.config import read_configuration
 
 try:
-    import fastentrypoints #NOQA
+    import fastentrypoints # NOQA
 except ImportError:
     warnings.warn(
         "The 'fastentrypoints' module could not be loaded. "
