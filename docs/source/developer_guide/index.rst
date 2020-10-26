@@ -30,7 +30,7 @@ Automatic coding style checks
 
 Enable enable automatic checks of code sanity and coding style::
 
-    pip install -e .[pre-commit]
+    pip install -e .[pre_commit]
     pre-commit install
 
 After this, the `yapf <https://github.com/google/yapf>`_ formatter,

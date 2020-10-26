@@ -72,7 +72,7 @@ jobs:
     - name: Install python dependencies
       run: |
         pip install --upgrade pip
-        pip install -e .[pre-commit,docs,testing]
+        pip install -e .[pre_commit,docs,testing]
         reentry scan -r aiida
     - name: Run pre-commit
       run: |
