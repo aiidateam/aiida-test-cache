@@ -3,9 +3,10 @@
 Defines a pytest fixture for creating mock AiiDA codes.
 """
 
+import os
+import sys
 import uuid
 import shutil
-import inspect
 import pathlib
 import typing as ty
 import warnings
@@ -14,17 +15,16 @@ import collections
 import click
 import pytest
 
+from aiida.engine.daemon import execmanager
 from aiida.orm import Code
 
-from ._env_keys import EnvKeys
+from ._extra_keys import CodeExtraKeys, CalculationExtraKeys
+from ._helpers import get_hash, copy_files
 from .._config import Config, CONFIG_FILE_NAME, ConfigActions
 
 __all__ = (
-    "pytest_addoption",
-    "testing_config_action",
-    "mock_regenerate_test_data",
-    "testing_config",
-    "mock_code_factory",
+    "pytest_addoption", "testing_config_action", "mock_regenerate_test_data", "testing_config",
+    "mock_code_factory", "patch_calculation_execution"
 )
 
 
@@ -77,8 +77,9 @@ def testing_config(testing_config_action):  # pylint: disable=redefined-outer-na
 
 @pytest.fixture(scope='function')
 def mock_code_factory(
-    aiida_localhost, testing_config, testing_config_action, mock_regenerate_test_data
-):  # pylint: disable=redefined-outer-name
+    aiida_localhost, testing_config, testing_config_action, mock_regenerate_test_data,
+    patch_calculation_execution
+):  # pylint: disable=redefined-outer-name, unused-argument
     """
     Fixture to create a mock AiiDA Code.
 
@@ -87,7 +88,7 @@ def mock_code_factory(
 
 
     """
-    def _get_mock_code(
+    def _get_mock_code( # pylint: disable=too-many-arguments
         label: str,
         entry_point: str,
         data_dir_abspath: ty.Union[str, pathlib.Path],
@@ -97,7 +98,7 @@ def mock_code_factory(
         _config: dict = testing_config,
         _config_action: str = testing_config_action,
         _regenerate_test_data: bool = mock_regenerate_test_data,
-    ):  # pylint: disable=too-many-arguments
+    ) -> Code:
         """
         Creates a mock AiiDA code. If the same inputs have been run previously,
         the results are copied over from the corresponding sub-directory of
@@ -172,25 +173,107 @@ def mock_code_factory(
         if _config_action == ConfigActions.GENERATE.value:
             mock_code_config[label] = code_executable_path
 
+        if code_executable_path in {'TO_SPECIFY', 'NOT_FOUND'}:
+            remote_executable_path = mock_executable_path
+        else:
+            remote_executable_path = code_executable_path
+
         code = Code(
             input_plugin_name=entry_point,
-            remote_computer_exec=[aiida_localhost, mock_executable_path]
+            remote_computer_exec=[aiida_localhost, remote_executable_path]
         )
         code.label = code_label
-        code.set_prepend_text(
-            inspect.cleandoc(
-                f"""
-                export {EnvKeys.LABEL.value}="{label}"
-                export {EnvKeys.DATA_DIR.value}="{data_dir_abspath}"
-                export {EnvKeys.EXECUTABLE_PATH.value}="{code_executable_path}"
-                export {EnvKeys.IGNORE_FILES.value}="{':'.join(ignore_files)}"
-                export {EnvKeys.IGNORE_PATHS.value}="{':'.join(ignore_paths)}"
-                export {EnvKeys.REGENERATE_DATA.value}={'True' if _regenerate_test_data else 'False'}
-                """
-            )
-        )
 
         code.store()
+
+        code.set_extra(CodeExtraKeys.LABEL.value, label)
+        code.set_extra(CodeExtraKeys.DATA_DIR.value, str(data_dir_abspath))
+        code.set_extra(CodeExtraKeys.EXECUTABLE_PATH.value, str(code_executable_path))
+        code.set_extra(CodeExtraKeys.IGNORE_FILES.value, ignore_files)
+        code.set_extra(CodeExtraKeys.IGNORE_PATHS.value, ignore_paths)
+        code.set_extra(CodeExtraKeys.REGENERATE_DATA.value, _regenerate_test_data)
+
         return code
 
     return _get_mock_code
+
+
+@pytest.fixture(scope='function', autouse=True)
+def patch_calculation_execution(monkeypatch):
+    """Patch execmanager.submit_calculation such as to take data from test data directory.
+    """
+
+    unpatched_submit_calculation = execmanager.submit_calculation
+    unpatched_retrieve_calculation = execmanager.retrieve_calculation
+
+    def mock_submit_calculation(calculation, transport):
+        """
+        Run the mock AiiDA code. If the corresponding result exists, it is
+        simply copied over to the current working directory. Otherwise,
+        the code will replace the executable in the aiidasubmit file,
+        launch the "real" code, and then copy the results into the data
+        directory.
+        :param calculation:
+        :param transport:
+        :return:
+        """
+        code = calculation.inputs.code
+        label = code.get_extra(CodeExtraKeys.LABEL.value)
+        data_dir = code.get_extra(CodeExtraKeys.DATA_DIR.value)
+        executable_path = code.get_extra(CodeExtraKeys.EXECUTABLE_PATH.value)
+
+        regenerate_data = code.get_extra(CodeExtraKeys.REGENERATE_DATA.value)
+
+        workdir = pathlib.Path(calculation.get_remote_workdir())
+        hash_digest = get_hash(workdir, code=code).hexdigest()
+        res_dir = pathlib.Path(data_dir) / f"mock-{label}-{hash_digest}"
+
+        calculation.set_extra(CalculationExtraKeys.RES_DIR.value, str(res_dir.absolute()))
+
+        if regenerate_data and res_dir.exists():
+            shutil.rmtree(res_dir)
+
+        if not res_dir.exists():
+            if not executable_path:
+                sys.exit("No existing output, and no executable specified.")
+
+            calculation.set_extra(CalculationExtraKeys.NEEDS_COPY_TO_RES_DIR.value, True)
+            res_jobid = unpatched_submit_calculation(calculation, transport)
+
+        else:
+            # copy outputs from data directory to working directory
+            for path in res_dir.iterdir():
+                out_path = workdir / path.name
+                if path.is_dir():
+                    shutil.rmtree(out_path, ignore_errors=True)
+                    shutil.copytree(path, out_path)
+                elif path.is_file():
+                    shutil.copyfile(path, out_path)
+                else:
+                    sys.exit(f"Can not copy '{path.name}'.")
+
+            # return a non-existing jobid
+            res_jobid = -1
+        return res_jobid
+
+    def mock_retrieve_calculation(calculation, transport, retrieved_temporary_folder):
+        # back up results to data directory
+        if calculation.get_extra(CalculationExtraKeys.NEEDS_COPY_TO_RES_DIR.value, False):
+            code = calculation.inputs.code
+
+            ignore_files = code.get_extra(CodeExtraKeys.IGNORE_FILES.value)
+            ignore_paths = code.get_extra(CodeExtraKeys.IGNORE_PATHS.value)
+
+            res_dir = calculation.get_extra(CalculationExtraKeys.RES_DIR.value)
+            os.makedirs(res_dir)
+            copy_files(
+                src_dir=pathlib.Path(calculation.get_remote_workdir()),
+                dest_dir=res_dir,
+                ignore_files=ignore_files,
+                ignore_paths=ignore_paths
+            )
+
+        unpatched_retrieve_calculation(calculation, transport, retrieved_temporary_folder)
+
+    monkeypatch.setattr(execmanager, 'submit_calculation', mock_submit_calculation)
+    monkeypatch.setattr(execmanager, 'retrieve_calculation', mock_retrieve_calculation)

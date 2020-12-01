@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import pytest
 
-from aiida_testing.mock_code._cli import copy_files
+from aiida_testing.mock_code._helpers import copy_files
 
 OUTPUT_PATHS = (
     Path('file1.txt'),

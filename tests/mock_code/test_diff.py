@@ -160,7 +160,7 @@ def test_regenerate_test_data(mock_code_factory, generate_diff_inputs, datadir):
         label='diff',
         data_dir_abspath=TEST_DATA_DIR,
         entry_point=CALC_ENTRY_POINT,
-        ignore_paths=('_aiidasubmit.sh', ),
+        ignore_paths=('_aiidasubmit.sh', 'file?.txt'),
         _regenerate_test_data=True,
     )
 
