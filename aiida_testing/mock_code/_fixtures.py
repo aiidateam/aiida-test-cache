@@ -87,6 +87,7 @@ def mock_code_factory(
 
 
     """
+
     def _get_mock_code(
         label: str,
         entry_point: str,
@@ -149,7 +150,7 @@ def mock_code_factory(
 
         data_dir_pl = pathlib.Path(data_dir_abspath)
         if not data_dir_pl.exists():
-            raise ValueError("Data directory '{}' does not exist".format(data_dir_abspath))
+            raise ValueError(f"Data directory '{data_dir_abspath}' does not exist")
         if not data_dir_pl.is_absolute():
             raise ValueError("Please provide absolute path to data directory.")
 
