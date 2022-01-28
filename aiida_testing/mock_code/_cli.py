@@ -109,7 +109,7 @@ def replace_submit_file(executable_path: str) -> None:
     Replace the executable specified in the AiiDA submit file, and
     strip the AIIDA_MOCK environment variables.
     """
-    with open(SUBMIT_FILE, 'r') as submit_file:
+    with open(SUBMIT_FILE, 'r', encoding='utf8') as submit_file:
         submit_file_content = submit_file.read()
 
     submit_file_res_lines = []
@@ -122,7 +122,7 @@ def replace_submit_file(executable_path: str) -> None:
             )
         else:
             submit_file_res_lines.append(line)
-    with open(SUBMIT_FILE, 'w') as submit_file:
+    with open(SUBMIT_FILE, 'w', encoding='utf8') as submit_file:
         submit_file.write('\n'.join(submit_file_res_lines))
 
 

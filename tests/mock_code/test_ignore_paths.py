@@ -26,7 +26,7 @@ def run_directory(tmp_path_factory):
     for path in OUTPUT_PATHS:
         if os.path.dirname(path):
             os.makedirs(tmp_path / os.path.dirname(path), exist_ok=True)
-        with open(tmp_path / path, 'w') as handle:
+        with open(tmp_path / path, 'w', encoding='utf8') as handle:
             handle.write("Test content")
 
     yield tmp_path

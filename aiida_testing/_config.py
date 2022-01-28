@@ -50,7 +50,7 @@ class Config(collections.abc.MutableMapping):
         for dir_path in [cwd, *cwd.parents]:
             config_file_path = (dir_path / CONFIG_FILE_NAME)
             if config_file_path.exists():
-                with open(config_file_path) as config_file:
+                with open(config_file_path, encoding='utf8') as config_file:
                     config = yaml.load(config_file, Loader=yaml.SafeLoader)
                     break
         else:
@@ -68,7 +68,7 @@ class Config(collections.abc.MutableMapping):
         cwd = pathlib.Path(os.getcwd())
         config_file_path = (cwd / CONFIG_FILE_NAME)
 
-        with open(config_file_path, 'w') as handle:
+        with open(config_file_path, 'w', encoding='utf8') as handle:
             yaml.dump(self._dict, handle, Dumper=yaml.SafeDumper)
 
     def __getitem__(self, item):

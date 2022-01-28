@@ -22,6 +22,7 @@ def generate_diff_inputs(datadir):
     """
     Generates inputs for the diff calculation.
     """
+
     def _generate_diff_inputs():
         with open(datadir / 'file1.txt', 'rb') as f1_obj:
             file1 = orm.SinglefileData(file=f1_obj)
@@ -53,9 +54,9 @@ def check_diff_output(result):
     """
     Checks the result from a diff calculation against a reference.
     """
-    diff_res_lines = tuple([
+    diff_res_lines = tuple(
         line.strip() for line in result['diff'].get_content().splitlines() if line.strip()
-    ])
+    )
     assert diff_res_lines == (
         "1,2c1", "< Lorem ipsum dolor..", "<", "---",
         "> Please report to the ministry of silly walks."
@@ -76,9 +77,7 @@ def test_basic(mock_code_factory, generate_diff_inputs):  # pylint: disable=rede
     res, node = run_get_node(
         CalculationFactory(CALC_ENTRY_POINT), code=mock_code, **generate_diff_inputs()
     )
-    assert node.exit_status == 0, "diff calculation failed with exit status {}".format(
-        node.exit_status
-    )
+    assert node.exit_status == 0, f"diff calculation failed with exit status {node.exit_status}"
     assert node.is_finished_ok
     check_diff_output(res)
 
