@@ -13,7 +13,7 @@ from voluptuous import Schema
 import yaml
 
 CONFIG_FILE_NAME = '.aiida-testing-config.yml'
-CONFIG_FILE_PATH_ENTRY = 'file_path'
+CONFIG_FILE_PATH_ENTRY = 'file-path'
 
 
 class ConfigActions(Enum):
@@ -28,7 +28,7 @@ class ConfigActions(Enum):
 class Config(collections.abc.MutableMapping):
     """Configuration of aiida-testing package."""
 
-    schema = Schema({'mock_code': Schema({str: str})})
+    schema = Schema({'mock_code': Schema({str: str}), 'file-path': str})
 
     def __init__(self, config=None):
         self._dict = config or {}

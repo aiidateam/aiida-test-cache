@@ -175,7 +175,9 @@ def mock_code_factory(
             mock_code_config[label] = code_executable_path
         if code_executable_path not in ('TO_SPECIFY', 'NOT_FOUND') and \
             not pathlib.Path(code_executable_path).is_absolute():
-            code_executable_path = mock_code_config.get(CONFIG_FILE_PATH_ENTRY, 'NOT_FOUND') / code_executable_path
+            code_executable_path = mock_code_config.get(
+                CONFIG_FILE_PATH_ENTRY, 'NOT_FOUND'
+            ) / code_executable_path
             code_executable_path = os.fspath(code_executable_path)
 
         code = Code(
