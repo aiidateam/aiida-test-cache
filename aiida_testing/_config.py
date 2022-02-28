@@ -13,6 +13,7 @@ from voluptuous import Schema
 import yaml
 
 CONFIG_FILE_NAME = '.aiida-testing-config.yml'
+CONFIG_FILE_PATH_ENTRY = 'file_path'
 
 
 class ConfigActions(Enum):
@@ -52,6 +53,7 @@ class Config(collections.abc.MutableMapping):
             if config_file_path.exists():
                 with open(config_file_path, encoding='utf8') as config_file:
                     config = yaml.load(config_file, Loader=yaml.SafeLoader)
+                    config[CONFIG_FILE_PATH_ENTRY] = config_file_path
                     break
         else:
             config = {}
@@ -68,8 +70,10 @@ class Config(collections.abc.MutableMapping):
         cwd = pathlib.Path(os.getcwd())
         config_file_path = (cwd / CONFIG_FILE_NAME)
 
+        _dict = self._dict.copy()
+        _dict.pop(CONFIG_FILE_PATH_ENTRY)
         with open(config_file_path, 'w', encoding='utf8') as handle:
-            yaml.dump(self._dict, handle, Dumper=yaml.SafeDumper)
+            yaml.dump(_dict, handle, Dumper=yaml.SafeDumper)
 
     def __getitem__(self, item):
         return self._dict.__getitem__(item)

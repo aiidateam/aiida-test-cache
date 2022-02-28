@@ -10,6 +10,7 @@ import pathlib
 import typing as ty
 import warnings
 import collections
+import os
 
 import click
 import pytest
@@ -17,7 +18,7 @@ import pytest
 from aiida.orm import Code
 
 from ._env_keys import EnvKeys
-from .._config import Config, CONFIG_FILE_NAME, ConfigActions
+from .._config import Config, CONFIG_FILE_NAME, CONFIG_FILE_PATH_ENTRY, ConfigActions
 
 __all__ = (
     "pytest_addoption",
@@ -172,6 +173,10 @@ def mock_code_factory(
             code_executable_path = shutil.which(executable_name) or 'NOT_FOUND'
         if _config_action == ConfigActions.GENERATE.value:
             mock_code_config[label] = code_executable_path
+        if code_executable_path not in ('TO_SPECIFY', 'NOT_FOUND') and \
+            not pathlib.Path(code_executable_path).is_absolute():
+            code_executable_path = mock_code_config.get(CONFIG_FILE_PATH_ENTRY, 'NOT_FOUND') / code_executable_path
+            code_executable_path = os.fspath(code_executable_path)
 
         code = Code(
             input_plugin_name=entry_point,
