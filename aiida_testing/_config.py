@@ -3,7 +3,6 @@
 Helpers for managing the ``.aiida-testing-config.yml`` configuration file.
 """
 
-import os
 import pathlib
 import typing as ty
 import collections
@@ -13,7 +12,6 @@ from voluptuous import Schema
 import yaml
 
 CONFIG_FILE_NAME = '.aiida-testing-config.yml'
-CONFIG_FILE_PATH_ENTRY = 'file-path'
 
 
 class ConfigActions(Enum):
@@ -28,10 +26,11 @@ class ConfigActions(Enum):
 class Config(collections.abc.MutableMapping):
     """Configuration of aiida-testing package."""
 
-    schema = Schema({'mock_code': Schema({str: str}), 'file-path': pathlib.Path})
+    schema = Schema({'mock_code': Schema({str: str})})
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, file_path=None):
         self._dict = config or {}
+        self._file_path = file_path or pathlib.Path().cwd() / CONFIG_FILE_NAME
         self.validate()
 
     def validate(self):
@@ -46,19 +45,18 @@ class Config(collections.abc.MutableMapping):
         The file is searched in the current working directory and all its parent
         directories.
         """
-        cwd = pathlib.Path(os.getcwd())
+        cwd = pathlib.Path().cwd()
         config: ty.Dict[str, str]
         for dir_path in [cwd, *cwd.parents]:
             config_file_path = (dir_path / CONFIG_FILE_NAME)
             if config_file_path.exists():
                 with open(config_file_path, encoding='utf8') as config_file:
                     config = yaml.load(config_file, Loader=yaml.SafeLoader)
-                    config[CONFIG_FILE_PATH_ENTRY] = config_file_path
                     break
         else:
             config = {}
 
-        return cls(config)
+        return cls(config, file_path=config_file_path)
 
     def to_file(self):
         """Write configuration to file in yaml format.
@@ -67,13 +65,15 @@ class Config(collections.abc.MutableMapping):
 
         :param handle: File handle to write config file to.
         """
-        cwd = pathlib.Path(os.getcwd())
-        config_file_path = (cwd / CONFIG_FILE_NAME)
+        with open(self.file_path, 'w', encoding='utf8') as handle:
+            yaml.dump(self._dict, handle, Dumper=yaml.SafeDumper)
 
-        _dict = self._dict.copy()
-        _dict.pop(CONFIG_FILE_PATH_ENTRY)
-        with open(config_file_path, 'w', encoding='utf8') as handle:
-            yaml.dump(_dict, handle, Dumper=yaml.SafeDumper)
+    @property
+    def file_path(self):
+        """
+        Path to the configuration file
+        """
+        return self._file_path
 
     def __getitem__(self, item):
         return self._dict.__getitem__(item)

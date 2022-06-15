@@ -18,7 +18,7 @@ import pytest
 from aiida.orm import Code
 
 from ._env_keys import EnvKeys
-from .._config import Config, CONFIG_FILE_NAME, CONFIG_FILE_PATH_ENTRY, ConfigActions
+from .._config import Config, CONFIG_FILE_NAME, ConfigActions
 
 __all__ = (
     "pytest_addoption",
@@ -96,7 +96,7 @@ def mock_code_factory(
         ignore_files: ty.Iterable[str] = ('_aiidasubmit.sh', ),
         ignore_paths: ty.Iterable[str] = ('_aiidasubmit.sh', ),
         executable_name: str = '',
-        _config: dict = testing_config,
+        _config: Config = testing_config,
         _config_action: str = testing_config_action,
         _regenerate_test_data: bool = mock_regenerate_test_data,
     ):  # pylint: disable=too-many-arguments
@@ -175,10 +175,7 @@ def mock_code_factory(
             mock_code_config[label] = code_executable_path
         if code_executable_path not in ('TO_SPECIFY', 'NOT_FOUND') and \
             not pathlib.Path(code_executable_path).is_absolute():
-            code_executable_path = mock_code_config.get(
-                CONFIG_FILE_PATH_ENTRY, 'NOT_FOUND'
-            ) / code_executable_path
-            code_executable_path = os.fspath(code_executable_path)
+            code_executable_path = os.fspath(_config.file_path / code_executable_path)
 
         code = Code(
             input_plugin_name=entry_point,
