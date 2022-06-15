@@ -56,7 +56,7 @@ extensions = [
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
-    'aiida': ('http://aiida-core.readthedocs.io/en/latest/', None),
+    'aiida': ('http://aiida-core.readthedocs.io/en/v1.6.8/', None),
 }
 
 nitpick_ignore = [('py:obj', 'module')]
