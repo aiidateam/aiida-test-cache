@@ -78,6 +78,7 @@ def get_hash_process(  # type: ignore # pylint: disable=dangerous-default-value
 @pytest.fixture(scope='function')
 def export_cache(hash_code_by_entrypoint):
     """Fixture to export an AiiDA graph from given node(s)"""
+
     def _export_cache(node, savepath, default_data_dir=None, overwrite=True):
         """
         Function to export an AiiDA graph from a given node.
@@ -87,7 +88,10 @@ def export_cache(hash_code_by_entrypoint):
         :param savepath: str or path where the export file is to be saved
         :param overwrite: bool, default=True, if existing export is overwritten
         """
-        from aiida.tools.importexport import export
+        try:
+            from aiida.tools.archive import create_archive
+        except ImportError:
+            from aiida.tools.importexport import export as create_archive
 
         # we rehash before the export, what goes in the hash is monkeypatched
         qub = QueryBuilder()
@@ -108,8 +112,8 @@ def export_cache(hash_code_by_entrypoint):
             to_export = node
         else:
             to_export = [node]
-        export(
-            to_export, outfile=full_export_path, overwrite=overwrite, include_comments=True
+        create_archive(
+            to_export, filename=full_export_path, overwrite=overwrite, include_comments=True
         )  # extras are automatically included
 
     return _export_cache
@@ -119,6 +123,7 @@ def export_cache(hash_code_by_entrypoint):
 @pytest.fixture(scope='function')
 def load_cache(hash_code_by_entrypoint):
     """Fixture to load a cached AiiDA graph"""
+
     def _load_cache(path_to_cache=None, node=None, load_all=False):
         """
         Function to import an AiiDA graph
@@ -130,7 +135,17 @@ def load_cache(hash_code_by_entrypoint):
             if no path_to_cache is given tries to guess it.
         :raises : OSError, if import file non existent
         """
-        from aiida.tools.importexport import import_data
+        from functools import partial
+        try:
+            from aiida.tools.archive import import_archive
+            import_archive = partial(
+                import_archive, merge_extras=('n', 'c', 'u'), import_new_extras=True
+            )
+        except ImportError:
+            from aiida.tools.importexport import import_data as import_archive
+            import_archive = partial(
+                import_archive, extras_mode_existing='ncu', extras_mode_new='import'
+            )
 
         if path_to_cache is None:
             if node is None:
@@ -150,15 +165,13 @@ def load_cache(hash_code_by_entrypoint):
         if full_import_path.exists():
             if os.path.isfile(full_import_path):
                 # import cache, also import extras
-                import_data(full_import_path, extras_mode_existing='ncu', extras_mode_new='import')
+                import_archive(full_import_path)
             elif os.path.isdir(full_import_path):
                 for filename in os.listdir(full_import_path):
                     file_full_import_path = os.path.join(full_import_path, filename)
                     # we curretly assume all files are valid aiida exports...
                     # maybe check if valid aiida export, or catch exception
-                    import_data(
-                        file_full_import_path, extras_mode_existing='ncu', extras_mode_new='import'
-                    )
+                    import_archive(file_full_import_path)
             else:  # Should never get there
                 raise OSError(
                     "Path: {} to be imported exists, but is neither a file or directory.".
@@ -187,6 +200,7 @@ def with_export_cache(export_cache, load_cache):
     Requires to provide an absolutpath to the export file to load or export to.
     Export the provenance of all calcjobs nodes within the test.
     """
+
     @contextmanager
     def _with_export_cache(data_dir_abspath, calculation_class=None, overwrite=False):
         """
