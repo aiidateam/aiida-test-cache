@@ -371,9 +371,10 @@ def run_with_cache(export_cache, load_cache):
 
         # now run process/workchain whatever
         with enable_caching():  # should enable caching globally in this python interpreter
-            #yield #test is running
-            #res, resnode = run_get_node(builder)
-            res, resnode = run_get_node(process_class, **builder)
+            if isinstance(builder, dict):
+                res, resnode = run_get_node(process_class, **builder)
+            else:
+                res, resnode = run_get_node(builder)
 
         # This is executed after the test
         if not cache_exists or overwrite:
