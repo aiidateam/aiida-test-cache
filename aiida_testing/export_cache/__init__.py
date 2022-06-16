@@ -6,8 +6,9 @@ to enable AiiDA - level caching.
 
 import typing as ty
 
-from ._fixtures import run_with_cache, load_cache, export_cache, with_export_cache, hash_code_by_entrypoint
+from ._fixtures import *
 
 __all__: ty.Tuple[str, ...] = (
-    'run_with_cache', 'load_cache', 'export_cache', "with_export_cache", "hash_code_by_entrypoint"
+    "pytest_addoption", "absolute_archive_path", 'run_with_cache', 'load_cache', 'export_cache',
+    "with_export_cache", "hash_code_by_entrypoint"
 )
