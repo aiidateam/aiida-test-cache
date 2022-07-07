@@ -288,6 +288,10 @@ def hash_code_by_entrypoint(monkeypatch):
         """
         Return a list of objects which should be included in the hash of a Code node
         """
+        try:
+            self.get_attribute
+        except AttributeError:
+            self = self._node
         # computer names are changed by aiida-core if imported and do not have same uuid.
         return [self.get_attribute(key='input_plugin')]  #, self.get_computer_name()]
 
@@ -296,10 +300,19 @@ def hash_code_by_entrypoint(monkeypatch):
         Return a list of objects which should be included in the hash of a CalcJobNode.
         code from aiida-core, only self.computer.uuid is commented out
         """
+        try:
+            self._hash_ignored_attributes
+            hash_ignored_inputs = self._hash_ignored_inputs
+        except AttributeError:
+            hash_ignored_inputs = self._hash_ignored_inputs
+            self = self._node
+
         #from pprint import pprint
         #from importlib import import_module
         ignored = list(self._hash_ignored_attributes)
         ignored.append('version')
+        ignored.append('environment_variables_double_quotes')
+        self._hash_ignored_attributes = tuple(ignored)
         objects = [
             #import_module(self.__module__.split('.', 1)[0]).__version__,
             {
@@ -312,21 +325,37 @@ def hash_code_by_entrypoint(monkeypatch):
                 entry.link_label: entry.node.get_hash()
                 for entry in
                 self.get_incoming(link_type=(LinkType.INPUT_CALC, LinkType.INPUT_WORK))
-                if entry.link_label not in self._hash_ignored_inputs
+                if entry.link_label not in hash_ignored_inputs
             }
         ]
         #pprint('{} objects to hash calcjob: {}'.format(type(self), objects))
         return objects
 
-    monkeypatch.setattr(Code, "_get_objects_to_hash", mock_objects_to_hash_code)
-    monkeypatch.setattr(CalcJobNode, "_get_objects_to_hash", mock_objects_to_hash_calcjob)
-
+    try:
+        monkeypatch.setattr(Code, "_get_objects_to_hash", mock_objects_to_hash_code)
+        monkeypatch.setattr(CalcJobNode, "_get_objects_to_hash", mock_objects_to_hash_calcjob)
+    except AttributeError:
+        from aiida.orm.nodes.caching import NodeCaching
+        from aiida.orm.nodes.process.calculation.calcjob import CalcJobNodeCaching
+        class MockCodeNodeCaching(NodeCaching):
+            def _get_objects_to_hash(self):
+                return mock_objects_to_hash_code(self)
+        class MockCalcjobNodeCaching(CalcJobNodeCaching):
+            def _get_objects_to_hash(self):
+                return mock_objects_to_hash_calcjob(self)
+        monkeypatch.setattr(CalcJobNode, "_CLS_NODE_CACHING", MockCalcjobNodeCaching)
+        monkeypatch.setattr(Code, "_CLS_NODE_CACHING", MockCodeNodeCaching)
     # for all other data, since they include the version
 
     def mock_objects_to_hash(self):
         """
         Return a list of objects which should be included in the hash of all Nodes.
         """
+        try:
+            self._hash_ignored_attributes
+        except AttributeError:
+            self = self._node
+
         ignored = list(self._hash_ignored_attributes)  # pylint: disable=protected-access
         ignored.append('version')
         self._hash_ignored_attributes = tuple(ignored)  # pylint: disable=protected-access
@@ -347,7 +376,14 @@ def hash_code_by_entrypoint(monkeypatch):
     # since we still want versioning for plugin datatypes and calcs we only monkeypatch aiida datatypes
     classes_to_patch = [Dict, SinglefileData, List, FolderData, RemoteData]
     for classe in classes_to_patch:
-        monkeypatch.setattr(classe, "_get_objects_to_hash", mock_objects_to_hash)
+        try:
+            monkeypatch.setattr(classe, "_get_objects_to_hash", mock_objects_to_hash)
+        except AttributeError:
+            from aiida.orm.nodes.caching import NodeCaching
+            class MockNodeCaching(NodeCaching):
+                def _get_objects_to_hash(self):
+                    return mock_objects_to_hash(self)
+            monkeypatch.setattr(classe, "_CLS_NODE_CACHING", MockNodeCaching)
 
     #BaseData, List, Array, ...
 
