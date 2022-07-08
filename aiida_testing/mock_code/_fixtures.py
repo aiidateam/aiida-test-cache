@@ -142,7 +142,7 @@ def mock_code_factory(
 
         # It's easy to forget the final comma and pass a string, e.g. `ignore_paths = ('_aiidasubmit.sh')`
         for arg in (ignore_paths, ignore_files):
-            assert isinstance(arg, collections.Iterable) and not isinstance(arg, str), \
+            assert isinstance(arg, collections.abc.Iterable) and not isinstance(arg, str), \
                 f"'ignore_files' and 'ignore_paths' arguments must be tuples or lists, found {type(arg)}"
 
         # we want to set a custom prepend_text, which is why the code
