@@ -17,7 +17,7 @@ from aiida.engine import run_get_node
 from aiida.engine import ProcessBuilderNamespace
 from aiida.common.hashing import make_hash
 from aiida.common.links import LinkType
-from aiida.orm import Node, Code, Dict, SinglefileData, List, FolderData, RemoteData
+from aiida.orm import Node, Code, Dict, SinglefileData, List, FolderData, RemoteData, StructureData
 from aiida.orm import CalcJobNode, ProcessNode  #, load_node
 from aiida.orm.querybuilder import QueryBuilder
 from aiida.manage.caching import enable_caching
@@ -377,7 +377,7 @@ def hash_code_by_entrypoint(monkeypatch):
         return objects
 
     # since we still want versioning for plugin datatypes and calcs we only monkeypatch aiida datatypes
-    classes_to_patch = [Dict, SinglefileData, List, FolderData, RemoteData]
+    classes_to_patch = [Dict, SinglefileData, List, FolderData, RemoteData, StructureData]
     for classe in classes_to_patch:
         try:
             monkeypatch.setattr(classe, "_get_objects_to_hash", mock_objects_to_hash)
