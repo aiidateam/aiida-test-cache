@@ -57,7 +57,7 @@ def test_export_cache(mock_code_factory, generate_diff_inputs, export_cache):
         label='diff',
         data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
         entry_point=CALC_ENTRY_POINT,
-        ignore_files=('_aiidasubmit.sh', 'file*')
+        ignore_paths=('_aiidasubmit.sh', 'file*')
     )
     inputs['diff']['code'] = mock_code
 
@@ -107,13 +107,12 @@ def test_mock_hash_codes(mock_code_factory, clear_database, hash_code_by_entrypo
         label='diff',
         data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
         entry_point=CALC_ENTRY_POINT,
-        ignore_files=('_aiidasubmit.sh', 'file*')
+        ignore_paths=('_aiidasubmit.sh', 'file*')
     )
     objs = mock_code._get_objects_to_hash()
     assert objs == [mock_code.get_attribute(key='input_plugin')]  #, mock_code.get_computer_name()]
 
 
-@pytest.mark.timeout(60, method='thread')
 def test_run_with_cache(
     aiida_local_code_factory,  #mock_code_factory,
     generate_diff_inputs,
@@ -130,7 +129,7 @@ def test_run_with_cache(
     #    label='diff',
     #    data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
     #    entry_point=CALC_ENTRY_POINT,
-    #    ignore_files=('_aiidasubmit.sh', 'file*')
+    #    ignore_paths=('_aiidasubmit.sh', 'file*')
     #)
     diff_code = aiida_local_code_factory(executable='diff', entry_point='diff')
     diff_code.store()
@@ -159,7 +158,6 @@ def test_run_with_cache(
     assert cache_src is not None  # Hint: maybe rerun, if the export was just created
 
 
-@pytest.mark.timeout(60, method='thread')
 def test_with_export_cache(
     aiida_local_code_factory,  #mock_code_factory,
     generate_diff_inputs,
@@ -177,7 +175,7 @@ def test_with_export_cache(
     #    label='diff',
     #    data_dir_abspath=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calc_data'),
     #    entry_point=CALC_ENTRY_POINT,
-    #    ignore_files=('_aiidasubmit.sh', 'file*')
+    #    ignore_paths=('_aiidasubmit.sh', 'file*')
     #)
     diff_code = aiida_local_code_factory(executable='diff', entry_point='diff')
     diff_code.store()

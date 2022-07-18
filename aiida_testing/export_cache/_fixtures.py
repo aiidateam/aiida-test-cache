@@ -28,44 +28,59 @@ try:
     from aiida.tools.archive import import_archive
     import_archive = partial(import_archive, merge_extras=('n', 'c', 'u'), import_new_extras=True)
 
-    def _import_with_migrate(archive_path, *args, **kwargs):
-        from click import echo
-        from aiida.tools.archive import get_format
-        from aiida.common.exceptions import IncompatibleStorageSchema
+    @pytest.fixture(scope='function', name="import_with_migrate")
+    def import_with_migrate_fixture():
+        """
+        Import AiiDA Archive. If the version is incompatible
+        try to migrate the archive
+        """
+        def _import_with_migrate(archive_path, *args, **kwargs):
+            from click import echo
+            from aiida.tools.archive import get_format
+            from aiida.common.exceptions import IncompatibleStorageSchema
 
-        try:
-            import_archive(archive_path, *args, **kwargs)
-        except IncompatibleStorageSchema:
-            echo(f'incompatible version detected for {archive_path}, trying migration')
-            archive_format = get_format()
-            version = archive_format.latest_version
-            archive_format.migrate(archive_path, archive_path, version, force=True, compression=6)
-            import_archive(archive_path, *args, **kwargs)
+            try:
+                import_archive(archive_path, *args, **kwargs)
+            except IncompatibleStorageSchema:
+                echo(f'incompatible version detected for {archive_path}, trying migration')
+                archive_format = get_format()
+                version = archive_format.latest_version
+                archive_format.migrate(archive_path, archive_path, version, force=True, compression=6)
+                import_archive(archive_path, *args, **kwargs)
+
+        return _import_with_migrate
 
 except ImportError:
     from aiida.tools.importexport import export as create_archive
     from aiida.tools.importexport import import_data as import_archive
     import_archive = partial(import_archive, extras_mode_existing='ncu', extras_mode_new='import')
 
-    def _import_with_migrate(archive_path, *args, **kwargs):
-        from click import echo
-        from aiida.tools.importexport import EXPORT_VERSION, IncompatibleArchiveVersionError
-        # these are only availbale after aiida >= 1.5.0, maybe rely on verdi import instead
-        from aiida.tools.importexport import detect_archive_type
-        from aiida.tools.importexport.archive.migrators import get_migrator
+    @pytest.fixture(scope='function', name="import_with_migrate")
+    def import_with_migrate_fixture(temp_dir):
+        """
+        Import AiiDA Archive. If the version is incompatible
+        try to migrate the archive
+        """
+        def _import_with_migrate(archive_path, *args, **kwargs):
+            from click import echo
+            from aiida.tools.importexport import EXPORT_VERSION, IncompatibleArchiveVersionError
+            # these are only availbale after aiida >= 1.5.0, maybe rely on verdi import instead
+            from aiida.tools.importexport import detect_archive_type
+            from aiida.tools.importexport.archive.migrators import get_migrator
 
-        try:
-            import_archive(archive_path, *args, **kwargs)
-        except IncompatibleArchiveVersionError:
-            echo(f'incompatible version detected for {archive_path}, trying migration')
-            migrator = get_migrator(detect_archive_type(archive_path))(archive_path)
-            archive_path = migrator.migrate(EXPORT_VERSION, None, out_compression='none')
-            import_archive(archive_path, *args, **kwargs)
-
+            try:
+                import_archive(archive_path, *args, **kwargs)
+            except IncompatibleArchiveVersionError:
+                echo(f'incompatible version detected for {archive_path}, trying migration')
+                migrator = get_migrator(detect_archive_type(archive_path))(archive_path)
+                archive_path = migrator.migrate(EXPORT_VERSION, None, out_compression='none', work_dir=temp_dir)
+                import_archive(archive_path, *args, **kwargs)
+        
+        return _import_with_migrate
 
 __all__ = (
     "pytest_addoption", "absolute_archive_path", "run_with_cache", "load_cache", "export_cache",
-    "with_export_cache", "hash_code_by_entrypoint", "export_cache_allow_migration"
+    "with_export_cache", "hash_code_by_entrypoint", "export_cache_allow_migration", "import_with_migrate_fixture"
 )
 
 #### utils
@@ -211,7 +226,7 @@ def export_cache(hash_code_by_entrypoint, absolute_archive_path):
 
 # Do we always want to use hash_code_by_entrypoint here?
 @pytest.fixture(scope='function')
-def load_cache(hash_code_by_entrypoint, absolute_archive_path, export_cache_allow_migration):
+def load_cache(hash_code_by_entrypoint, absolute_archive_path, export_cache_allow_migration, import_with_migrate):
     """Fixture to load a cached AiiDA graph"""
 
     def _load_cache(path_to_cache=None, node=None):
@@ -244,7 +259,7 @@ def load_cache(hash_code_by_entrypoint, absolute_archive_path, export_cache_allo
             if os.path.isfile(full_import_path):
                 # import cache, also import extras
                 if export_cache_allow_migration:
-                    _import_with_migrate(full_import_path)
+                    import_with_migrate(full_import_path)
                 else:
                     import_archive(full_import_path)
             elif os.path.isdir(full_import_path):
@@ -253,9 +268,9 @@ def load_cache(hash_code_by_entrypoint, absolute_archive_path, export_cache_allo
                     # we curretly assume all files are valid aiida exports...
                     # maybe check if valid aiida export, or catch exception
                     if export_cache_allow_migration:
-                        _import_with_migrate(full_import_path)
+                        import_with_migrate(file_full_import_path)
                     else:
-                        import_archive(full_import_path)
+                        import_archive(file_full_import_path)
             else:  # Should never get there
                 raise OSError(
                     f"Path: {full_import_path} to be imported exists, but is neither a file or directory."

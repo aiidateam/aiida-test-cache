@@ -11,10 +11,13 @@ jobs:
       matrix:
         python-version: ['3.9', '3.10']
         editable_install_option: ['-e', '']
+        add-pytest-opts: ['--export-cache-allow-migration']
         include:
         #Test for aiida-core 1.X (since aiida-core 2.X does not support python 3.7)
         - python-version: '3.7'
           editable_install_option: '-e'
+          add-pytest-opts: '--export-cache-allow-migration'
+      fail-fast: false
 
     services:
       postgres:
@@ -51,7 +54,7 @@ jobs:
     - name: Run test suite
       env:
         # show timings of tests
-        PYTEST_ADDOPTS: "--durations=0"
+        PYTEST_ADDOPTS: "--durations=0 ${{ matrix.add-pytest-opts }}"
       run: |
         aiida-mock-code || true
         cd tests; pytest

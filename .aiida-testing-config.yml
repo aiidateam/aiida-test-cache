@@ -1,2 +1,6 @@
 mock_code:
   diff: /usr/bin/diff
+export_cache:
+  calcjob_ignored_attributes:
+    - environment_variables_double_quotes
+    - submit_script_filename
