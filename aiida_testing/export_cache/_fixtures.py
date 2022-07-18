@@ -13,6 +13,7 @@ from contextlib import contextmanager
 import typing as ty
 import pytest
 
+from aiida import plugins
 from aiida.engine import run_get_node
 from aiida.engine import ProcessBuilderNamespace
 from aiida.common.hashing import make_hash
@@ -26,28 +27,58 @@ try:
     from aiida.tools.archive import create_archive
     from aiida.tools.archive import import_archive
     import_archive = partial(import_archive, merge_extras=('n', 'c', 'u'), import_new_extras=True)
+
+    def _import_with_migrate(archive_path, *args, **kwargs):
+        from click import echo
+        from aiida.tools.archive import get_format
+        from aiida.common.exceptions import IncompatibleStorageSchema
+
+        try:
+            import_archive(archive_path, *args, **kwargs)
+        except IncompatibleStorageSchema:
+            echo(f'incompatible version detected for {archive_path}, trying migration')
+            archive_format = get_format()
+            version = archive_format.latest_version
+            archive_format.migrate(archive_path, archive_path, version, force=True, compression=6)
+            import_archive(archive_path, *args, **kwargs)
+
 except ImportError:
     from aiida.tools.importexport import export as create_archive
     from aiida.tools.importexport import import_data as import_archive
     import_archive = partial(import_archive, extras_mode_existing='ncu', extras_mode_new='import')
 
+    def _import_with_migrate(archive_path, *args, **kwargs):
+        from click import echo
+        from aiida.tools.importexport import EXPORT_VERSION, IncompatibleArchiveVersionError
+        # these are only availbale after aiida >= 1.5.0, maybe rely on verdi import instead
+        from aiida.tools.importexport import detect_archive_type
+        from aiida.tools.importexport.archive.migrators import get_migrator
+
+        try:
+            import_archive(archive_path, *args, **kwargs)
+        except IncompatibleArchiveVersionError:
+            echo(f'incompatible version detected for {archive_path}, trying migration')
+            migrator = get_migrator(detect_archive_type(archive_path))(archive_path)
+            archive_path = migrator.migrate(EXPORT_VERSION, None, out_compression='none')
+            import_archive(archive_path, *args, **kwargs)
+
+
 __all__ = (
     "pytest_addoption", "absolute_archive_path", "run_with_cache", "load_cache", "export_cache",
-    "with_export_cache", "hash_code_by_entrypoint"
+    "with_export_cache", "hash_code_by_entrypoint", "export_cache_allow_migration"
 )
+
+#### utils
 
 
 def pytest_addoption(parser):
     """Add pytest command line options."""
     parser.addoption(
-        "--aiida-cache-dir",
-        action="store",
-        default='',
-        help="Default location for exported caches"
+        "--export-cache-allow-migration",
+        action="store_true",
+        default=False,
+        help="If True the stored archives can be migrated if needed."
     )
-
-
-#### utils
 
 
 def unnest_dict(nested_dict: ty.Union[dict, ProcessBuilderNamespace]) -> dict:  # type: ignore
@@ -99,11 +130,19 @@ def get_hash_process(  # type: ignore # pylint: disable=dangerous-default-value
 #### fixtures
 
 
+@pytest.fixture(scope='session')
+def export_cache_allow_migration(request):
+    """Read whether to regenerate test data from command line option."""
+    return request.config.getoption("--export-cache-allow-migration")
+
+
 @pytest.fixture(scope='function')
-def absolute_archive_path(request):
+def absolute_archive_path(request, testing_config):
     """
     Fixture to get the absolute filepath for a given archive
     """
+
+    export_cache_config = testing_config.get('export_cache', {})
 
     def _absolute_archive_path(filepath):
         """
@@ -111,10 +150,10 @@ def absolute_archive_path(request):
         The procedure is:
 
         - If the path is already absolute, return it
-        - If the option -aiida-cache-dir is given construct it relative to this
-        - Otherwise interpret the directory as relative to the test file inside a folder `data_dir`
+        - If the option default_cache_dir is given construct it relative to this
+        - Otherwise interpret the directory as relative to the test file inside a folder `caches`
         """
-        default_data_dir = request.config.getoption("--aiida-cache-dir")
+        default_data_dir = export_cache_config.get('default_data_dir', '')
         filepath = pathlib.Path(filepath)
 
         if filepath.is_absolute():
@@ -123,7 +162,7 @@ def absolute_archive_path(request):
             if not default_data_dir:
                 #Adapted from shared_datadir of pytest-datadir to not use paths
                 #in the tmp copies created by pytest
-                default_data_dir = pathlib.Path(request.fspath.dirname) / 'data_dir'
+                default_data_dir = pathlib.Path(request.fspath.dirname) / 'caches'
             else:
                 default_data_dir = pathlib.Path(default_data_dir)
             if not default_data_dir.exists():
@@ -172,10 +211,10 @@ def export_cache(hash_code_by_entrypoint, absolute_archive_path):
 
 # Do we always want to use hash_code_by_entrypoint here?
 @pytest.fixture(scope='function')
-def load_cache(hash_code_by_entrypoint, absolute_archive_path):
+def load_cache(hash_code_by_entrypoint, absolute_archive_path, export_cache_allow_migration):
     """Fixture to load a cached AiiDA graph"""
 
-    def _load_cache(path_to_cache=None, node=None, load_all=False):
+    def _load_cache(path_to_cache=None, node=None):
         """
         Function to import an AiiDA graph
 
@@ -204,13 +243,19 @@ def load_cache(hash_code_by_entrypoint, absolute_archive_path):
         if os.path.exists(full_import_path):
             if os.path.isfile(full_import_path):
                 # import cache, also import extras
-                import_archive(full_import_path)
+                if export_cache_allow_migration:
+                    _import_with_migrate(full_import_path)
+                else:
+                    import_archive(full_import_path)
             elif os.path.isdir(full_import_path):
                 for filename in os.listdir(full_import_path):
                     file_full_import_path = os.path.join(full_import_path, filename)
                     # we curretly assume all files are valid aiida exports...
                     # maybe check if valid aiida export, or catch exception
-                    import_archive(file_full_import_path)
+                    if export_cache_allow_migration:
+                        _import_with_migrate(full_import_path)
+                    else:
+                        import_archive(full_import_path)
             else:  # Should never get there
                 raise OSError(
                     f"Path: {full_import_path} to be imported exists, but is neither a file or directory."
@@ -278,11 +323,19 @@ def with_export_cache(export_cache, load_cache, absolute_archive_path):
 
 
 @pytest.fixture
-def hash_code_by_entrypoint(monkeypatch):
+def hash_code_by_entrypoint(monkeypatch, testing_config):
     """
-    Monkeypatch .get_objects_to_hash of Code and CalcJobNodes of aiida-core
+    Monkeypatch .get_objects_to_hash of Code, CalcJobNodes and core Data nodes of aiida-core
     to not include the uuid of the computer and less information of the code node in the hash
+    and remove aiida-core version from hash
     """
+    export_cache_config = testing_config.get('export_cache', {})
+
+    #Load the corresponding entry points
+    node_ignored_attributes = {
+        plugins.DataFactory(entry_point): ignored
+        for entry_point, ignored in export_cache_config.get('node_ignored_attributes', {})
+    }
 
     def mock_objects_to_hash_code(self):
         """
@@ -307,21 +360,27 @@ def hash_code_by_entrypoint(monkeypatch):
             hash_ignored_inputs = self._hash_ignored_inputs
             self = self._node
 
+        additional_ignored_inputs = tuple(
+            set(export_cache_config.get('calcjob_ignored_inputs', []))
+        )
+        additional_ignored_attributes = tuple(
+            set(export_cache_config.get('calcjob_ignored_attributes', []))
+        )
+
         #from pprint import pprint
         #from importlib import import_module
-        ignored = list(hash_ignored_inputs)
-        ignored.append('code')
-        hash_ignored_inputs = tuple(ignored)
-        ignored = list(self._hash_ignored_attributes)
-        ignored.append('version')
-        ignored.append('environment_variables_double_quotes')
-        self._hash_ignored_attributes = tuple(ignored)
+        hash_ignored_inputs = tuple(hash_ignored_inputs) + \
+                              additional_ignored_inputs
+        self._hash_ignored_attributes = tuple(self._hash_ignored_attributes) + \
+                                        ('version',) + \
+                                        additional_ignored_attributes
+
         objects = [
             #import_module(self.__module__.split('.', 1)[0]).__version__,
             {
                 key: val
-                for key, val in self.attributes_items()
-                if key not in ignored and key not in self._updatable_attributes
+                for key, val in self.attributes_items() if key not in self._hash_ignored_attributes
+                and key not in self._updatable_attributes
             },
             #self.computer.uuid if self.computer is not None else None,
             {
@@ -340,12 +399,23 @@ def hash_code_by_entrypoint(monkeypatch):
     except AttributeError:
         from aiida.orm.nodes.caching import NodeCaching
         from aiida.orm.nodes.process.calculation.calcjob import CalcJobNodeCaching
+
         class MockCodeNodeCaching(NodeCaching):
+            """
+            NodeCaching subclass with stripped down _get_objects_to_hash method
+            """
+
             def _get_objects_to_hash(self):
                 return mock_objects_to_hash_code(self)
+
         class MockCalcjobNodeCaching(CalcJobNodeCaching):
+            """
+            NodeCaching subclass with stripped down _get_objects_to_hash method
+            """
+
             def _get_objects_to_hash(self):
                 return mock_objects_to_hash_calcjob(self)
+
         monkeypatch.setattr(CalcJobNode, "_CLS_NODE_CACHING", MockCalcjobNodeCaching)
         monkeypatch.setattr(Code, "_CLS_NODE_CACHING", MockCodeNodeCaching)
     # for all other data, since they include the version
@@ -359,9 +429,12 @@ def hash_code_by_entrypoint(monkeypatch):
         except AttributeError:
             self = self._node
 
-        ignored = list(self._hash_ignored_attributes)  # pylint: disable=protected-access
-        ignored.append('version')
-        self._hash_ignored_attributes = tuple(ignored)  # pylint: disable=protected-access
+        class_name = self.__class__.__name__
+
+        additional_ignored_attributes = tuple(set(node_ignored_attributes.get(class_name, [])))
+        self._hash_ignored_attributes = tuple(self._hash_ignored_attributes) + \
+                                        ('version',) + \
+                                        additional_ignored_attributes
 
         objects = [
             #importlib.import_module(self.__module__.split('.', 1)[0]).__version__,
@@ -383,9 +456,15 @@ def hash_code_by_entrypoint(monkeypatch):
             monkeypatch.setattr(classe, "_get_objects_to_hash", mock_objects_to_hash)
         except AttributeError:
             from aiida.orm.nodes.caching import NodeCaching
+
             class MockNodeCaching(NodeCaching):
+                """
+                NodeCaching subclass with stripped down _get_objects_to_hash method
+                """
+
                 def _get_objects_to_hash(self):
                     return mock_objects_to_hash(self)
+
             monkeypatch.setattr(classe, "_CLS_NODE_CACHING", MockNodeCaching)
 
     #BaseData, List, Array, ...

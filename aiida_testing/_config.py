@@ -26,7 +26,15 @@ class ConfigActions(Enum):
 class Config(collections.abc.MutableMapping):
     """Configuration of aiida-testing package."""
 
-    schema = Schema({'mock_code': Schema({str: str})})
+    schema = Schema({
+        'mock_code': Schema({str: str}),
+        'export_cache': {
+            'default_cache_dir': str,
+            'calcjob_ignored_inputs': [str],
+            'calcjob_ignored_attributes': [str],
+            'node_ignored_attributes': Schema({str: [str]})
+        }
+    })
 
     def __init__(self, config=None, file_path=None):
         self._dict = config or {}
