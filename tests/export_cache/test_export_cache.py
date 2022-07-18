@@ -5,7 +5,6 @@ Test basic usage of the mock code on examples using aiida-diff.
 # pylint: disable=unused-argument, protected-access
 
 import os
-import pytest
 
 from aiida.engine import run_get_node
 from aiida.engine import WorkChain
@@ -23,6 +22,8 @@ class DiffWorkChain(WorkChain):  # type: ignore
     """
     Very simple workchain which wraps a diff calculation for testing purposes
     """
+    #pylint: disable=missing-function-docstring
+
     @classmethod
     def define(cls, spec):
         super(DiffWorkChain, cls).define(spec)

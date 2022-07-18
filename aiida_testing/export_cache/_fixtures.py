@@ -12,6 +12,7 @@ from functools import partial
 from contextlib import contextmanager
 import typing as ty
 import pytest
+from click import echo
 
 from aiida import plugins
 from aiida.engine import run_get_node
@@ -29,24 +30,30 @@ try:
     import_archive = partial(import_archive, merge_extras=('n', 'c', 'u'), import_new_extras=True)
 
     @pytest.fixture(scope='function', name="import_with_migrate")
-    def import_with_migrate_fixture():
+    def import_with_migrate_fixture(export_cache_allow_migration):
         """
         Import AiiDA Archive. If the version is incompatible
         try to migrate the archive
         """
+
         def _import_with_migrate(archive_path, *args, **kwargs):
-            from click import echo
+            #pylint: disable=import-outside-toplevel
             from aiida.tools.archive import get_format
             from aiida.common.exceptions import IncompatibleStorageSchema
 
             try:
                 import_archive(archive_path, *args, **kwargs)
             except IncompatibleStorageSchema:
-                echo(f'incompatible version detected for {archive_path}, trying migration')
-                archive_format = get_format()
-                version = archive_format.latest_version
-                archive_format.migrate(archive_path, archive_path, version, force=True, compression=6)
-                import_archive(archive_path, *args, **kwargs)
+                if export_cache_allow_migration:
+                    echo(f'incompatible version detected for {archive_path}, trying migration')
+                    archive_format = get_format()
+                    version = archive_format.latest_version
+                    archive_format.migrate(
+                        archive_path, archive_path, version, force=True, compression=6
+                    )
+                    import_archive(archive_path, *args, **kwargs)
+                else:
+                    raise
 
         return _import_with_migrate
 
@@ -56,13 +63,14 @@ except ImportError:
     import_archive = partial(import_archive, extras_mode_existing='ncu', extras_mode_new='import')
 
     @pytest.fixture(scope='function', name="import_with_migrate")
-    def import_with_migrate_fixture(temp_dir):
+    def import_with_migrate_fixture(temp_dir, export_cache_allow_migration):
         """
         Import AiiDA Archive. If the version is incompatible
         try to migrate the archive
         """
+
         def _import_with_migrate(archive_path, *args, **kwargs):
-            from click import echo
+            #pylint: disable=import-outside-toplevel
             from aiida.tools.importexport import EXPORT_VERSION, IncompatibleArchiveVersionError
             # these are only availbale after aiida >= 1.5.0, maybe rely on verdi import instead
             from aiida.tools.importexport import detect_archive_type
@@ -71,16 +79,23 @@ except ImportError:
             try:
                 import_archive(archive_path, *args, **kwargs)
             except IncompatibleArchiveVersionError:
-                echo(f'incompatible version detected for {archive_path}, trying migration')
-                migrator = get_migrator(detect_archive_type(archive_path))(archive_path)
-                archive_path = migrator.migrate(EXPORT_VERSION, None, out_compression='none', work_dir=temp_dir)
-                import_archive(archive_path, *args, **kwargs)
-        
+                if export_cache_allow_migration:
+                    echo(f'incompatible version detected for {archive_path}, trying migration')
+                    migrator = get_migrator(detect_archive_type(archive_path))(archive_path)
+                    archive_path = migrator.migrate(
+                        EXPORT_VERSION, None, out_compression='none', work_dir=temp_dir
+                    )
+                    import_archive(archive_path, *args, **kwargs)
+                else:
+                    raise
+
         return _import_with_migrate
+
 
 __all__ = (
     "pytest_addoption", "absolute_archive_path", "run_with_cache", "load_cache", "export_cache",
-    "with_export_cache", "hash_code_by_entrypoint", "export_cache_allow_migration", "import_with_migrate_fixture"
+    "with_export_cache", "hash_code_by_entrypoint", "export_cache_allow_migration",
+    "import_with_migrate_fixture"
 )
 
 #### utils
@@ -126,7 +141,7 @@ def get_hash_process(  # type: ignore # pylint: disable=dangerous-default-value
     for key, val in sorted(unnest_builder.items()):  # pylint: disable=unused-variable
         if isinstance(val, Code):
             continue  # we do not include the code in the hash, might be mocked
-            #TODO include the code to some extent
+            #TODO include the code to some extent #pylint: disable=fixme
         if isinstance(val, Node):
             if not val.is_stored:
                 val.store()
@@ -226,7 +241,7 @@ def export_cache(hash_code_by_entrypoint, absolute_archive_path):
 
 # Do we always want to use hash_code_by_entrypoint here?
 @pytest.fixture(scope='function')
-def load_cache(hash_code_by_entrypoint, absolute_archive_path, export_cache_allow_migration, import_with_migrate):
+def load_cache(hash_code_by_entrypoint, absolute_archive_path, import_with_migrate):
     """Fixture to load a cached AiiDA graph"""
 
     def _load_cache(path_to_cache=None, node=None):
@@ -258,19 +273,13 @@ def load_cache(hash_code_by_entrypoint, absolute_archive_path, export_cache_allo
         if os.path.exists(full_import_path):
             if os.path.isfile(full_import_path):
                 # import cache, also import extras
-                if export_cache_allow_migration:
-                    import_with_migrate(full_import_path)
-                else:
-                    import_archive(full_import_path)
+                import_with_migrate(full_import_path)
             elif os.path.isdir(full_import_path):
                 for filename in os.listdir(full_import_path):
                     file_full_import_path = os.path.join(full_import_path, filename)
                     # we curretly assume all files are valid aiida exports...
                     # maybe check if valid aiida export, or catch exception
-                    if export_cache_allow_migration:
-                        import_with_migrate(file_full_import_path)
-                    else:
-                        import_archive(file_full_import_path)
+                    import_with_migrate(file_full_import_path)
             else:  # Should never get there
                 raise OSError(
                     f"Path: {full_import_path} to be imported exists, but is neither a file or directory."
@@ -369,7 +378,7 @@ def hash_code_by_entrypoint(monkeypatch, testing_config):
         code from aiida-core, only self.computer.uuid is commented out
         """
         try:
-            self._hash_ignored_attributes
+            self._hash_ignored_attributes  #pylint: disable=pointless-statement
             hash_ignored_inputs = self._hash_ignored_inputs
         except AttributeError:
             hash_ignored_inputs = self._hash_ignored_inputs
@@ -412,10 +421,11 @@ def hash_code_by_entrypoint(monkeypatch, testing_config):
         monkeypatch.setattr(Code, "_get_objects_to_hash", mock_objects_to_hash_code)
         monkeypatch.setattr(CalcJobNode, "_get_objects_to_hash", mock_objects_to_hash_calcjob)
     except AttributeError:
+        #pylint: disable=import-outside-toplevel,no-name-in-module,import-error,too-few-public-methods
         from aiida.orm.nodes.caching import NodeCaching
         from aiida.orm.nodes.process.calculation.calcjob import CalcJobNodeCaching
 
-        class MockCodeNodeCaching(NodeCaching):
+        class MockCodeNodeCaching(NodeCaching):  #type: ignore
             """
             NodeCaching subclass with stripped down _get_objects_to_hash method
             """
@@ -423,7 +433,7 @@ def hash_code_by_entrypoint(monkeypatch, testing_config):
             def _get_objects_to_hash(self):
                 return mock_objects_to_hash_code(self)
 
-        class MockCalcjobNodeCaching(CalcJobNodeCaching):
+        class MockCalcjobNodeCaching(CalcJobNodeCaching):  #type: ignore
             """
             NodeCaching subclass with stripped down _get_objects_to_hash method
             """
@@ -470,9 +480,10 @@ def hash_code_by_entrypoint(monkeypatch, testing_config):
         try:
             monkeypatch.setattr(classe, "_get_objects_to_hash", mock_objects_to_hash)
         except AttributeError:
+            #pylint: disable=import-outside-toplevel,no-name-in-module,import-error,too-few-public-methods
             from aiida.orm.nodes.caching import NodeCaching
 
-            class MockNodeCaching(NodeCaching):
+            class MockNodeCaching(NodeCaching):  #type: ignore
                 """
                 NodeCaching subclass with stripped down _get_objects_to_hash method
                 """
