@@ -175,7 +175,7 @@ def mock_code_factory(
             mock_code_config[label] = code_executable_path
         if code_executable_path not in ('TO_SPECIFY', 'NOT_FOUND') and \
             not pathlib.Path(code_executable_path).is_absolute():
-            code_executable_path = os.fspath(_config.file_path / code_executable_path)
+            code_executable_path = os.fspath(_config.file_path.parent / code_executable_path)
 
         code = Code(
             input_plugin_name=entry_point,
