@@ -214,3 +214,31 @@ def test_regenerate_test_data_relative(mock_code_factory, generate_diff_inputs, 
     # check that ignore_paths works
     assert not (datadir / '_aiidasubmit.sh').is_file()
     assert (datadir / 'file1.txt').is_file()
+
+
+def test_regenerate_test_data_executable(mock_code_factory, generate_diff_inputs, datadir):  # pylint: disable=redefined-outer-name
+    """
+    Check that mock code regenerates test data if asked to do so
+    for a executable specified is only specified via the executable name
+
+    Note: So far, this only tests that the test still runs fine.
+    Should e.g. check timestamp on test data directory.
+    """
+    mock_code = mock_code_factory(
+        label='diff-executable',
+        data_dir_abspath=TEST_DATA_DIR,
+        entry_point=CALC_ENTRY_POINT,
+        ignore_paths=('_aiidasubmit.sh', ),
+        executable_name='diff',
+        _regenerate_test_data=True,
+    )
+
+    res, node = run_get_node(
+        CalculationFactory(CALC_ENTRY_POINT), code=mock_code, **generate_diff_inputs()
+    )
+    assert node.is_finished_ok
+    check_diff_output(res)
+
+    # check that ignore_paths works
+    assert not (datadir / '_aiidasubmit.sh').is_file()
+    assert (datadir / 'file1.txt').is_file()
