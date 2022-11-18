@@ -16,7 +16,7 @@ from click import echo
 
 from aiida import plugins
 from aiida.engine import run_get_node
-from aiida.engine import ProcessBuilderNamespace
+from aiida.engine import ProcessBuilderNamespace, Process
 from aiida.common.hashing import make_hash
 from aiida.common.links import LinkType
 from aiida.orm import Node, Code, Dict, SinglefileData, List, FolderData, RemoteData, StructureData
@@ -33,7 +33,7 @@ try:
     def import_with_migrate_fixture(export_cache_allow_migration):
         """
         Import AiiDA Archive. If the version is incompatible
-        try to migrate the archive
+        try to migrate the archive if --export-cache-allow-migration option is specified
         """
 
         def _import_with_migrate(archive_path, *args, **kwargs):
@@ -66,7 +66,7 @@ except ImportError:
     def import_with_migrate_fixture(temp_dir, export_cache_allow_migration):
         """
         Import AiiDA Archive. If the version is incompatible
-        try to migrate the archive
+        try to migrate the archive if --export-cache-allow-migration option is specified
         """
 
         def _import_with_migrate(archive_path, *args, **kwargs):
@@ -110,7 +110,8 @@ def pytest_addoption(parser):
         help="If True the stored archives can be migrated if needed."
     )
 
-def _rehash_processes():
+
+def _rehash_processes() -> None:
     """
     Recompute the hashes for all ProcessNodes
     """
@@ -121,34 +122,35 @@ def _rehash_processes():
         node1[0].rehash()
 
 
-def unnest_dict(nested_dict: ty.Union[dict, ProcessBuilderNamespace]) -> dict:  # type: ignore
+def unnest_dict(nested_dict: ty.Union[dict, ProcessBuilderNamespace]) -> dict:  #type: ignore
     """
-    Returns a simple dictionary from a possible arbitray nested dictionary
-    or Aiida ProcessBuilderNamespace by adding keys in dot notation, rekrusively
+    Returns a simple dictionary from a possible arbitrary nested dictionary
+    or Aiida ProcessBuilderNamespace by adding keys in dot notation, recursively
     """
     new_dict = {}
     for key, val in nested_dict.items():
         if isinstance(val, (dict, ProcessBuilderNamespace)):
-            unval = unnest_dict(val)  #rekursive!
+            unval = unnest_dict(val)  #recursive!
             for key2, val2 in unval.items():
-                key_new = str(key) + '.' + str(key2)
-                new_dict[key_new] = val2
+                new_dict[f'{key}.{key2}'] = val2
         else:
-            new_dict[str(key)] = val  # type: ignore
+            new_dict[str(key)] = val  #type: ignore
     return new_dict
 
 
-def get_hash_process(  # type: ignore # pylint: disable=dangerous-default-value
-    builder: ty.Union[dict, ProcessBuilderNamespace],
-    input_nodes: list = []
+def get_hash_process( #type: ignore
+    builder: ty.Union[dict, ProcessBuilderNamespace], input_nodes: ty.Union[list, None] = None
 ):
-    """ creates a hash from a builder/dictionary of inputs"""
+    """Create a hash from a builder/dictionary of inputs"""
+
+    if input_nodes is None:
+        input_nodes = []
 
     # hashing the builder
     # currently workchains are not hashed in AiiDA so we create a hash for the filename
     unnest_builder = unnest_dict(builder)
     md5sum = hashlib.md5()
-    for key, val in sorted(unnest_builder.items()):  # pylint: disable=unused-variable
+    for _, val in sorted(unnest_builder.items()):  # pylint: disable=unused-variable
         if isinstance(val, Code):
             continue  # we do not include the code in the hash, might be mocked
             #TODO include the code to some extent #pylint: disable=fixme
@@ -222,11 +224,11 @@ def export_cache(hash_code_by_entrypoint, absolute_archive_path):
     def _export_cache(node, savepath, overwrite=True):
         """
         Function to export an AiiDA graph from a given node.
-        Currenlty, uses the export functionalities of aiida-core
+        Uses the export functionalities of aiida-core
 
         :param node: AiiDA node which graph is to be exported, or list of nodes
         :param savepath: str or path where the export file is to be saved
-        :param overwrite: bool, default=True, if existing export is overwritten
+        :param overwrite: bool, default=True, if True any existing export is overwritten
         """
 
         # we rehash before the export, since what goes in the hash is monkeypatched
@@ -255,18 +257,18 @@ def load_cache(hash_code_by_entrypoint, absolute_archive_path, import_with_migra
         Function to import an AiiDA graph
 
         :param path_to_cache: str or path to the AiiDA export file to load,
-            if path_to_cache points to a directory, all import files in this dir are imported
-
-        :param node: AiiDA node which cache to load,
-            if no path_to_cache is given tries to guess it.
-        :raises : OSError, if import file non existent
+                              if path_to_cache points to a directory,
+                              all import files in this dir are imported
+        :param node: AiiDA node, determines which cache to load (CURRENTLY NOT IMPLEMENTED)
+        :raises : OSError or FileNotFoundError, if import file is non existent
         """
-        if path_to_cache is None:
+        if path_to_cache is None:  #pylint: disable=no-else-raise
             if node is None:
                 raise ValueError(
                     "Node argument can not be None "
                     "if no explicit 'path_to_cache' is specified"
                 )
+            raise NotImplementedError('The node argument is currently not supported')
             #else:  # create path from node
             #    pass
             #    # get default data dir
@@ -305,8 +307,11 @@ def load_cache(hash_code_by_entrypoint, absolute_archive_path, import_with_migra
 @pytest.fixture(scope='function')
 def with_export_cache(export_cache, load_cache, absolute_archive_path):
     """
-    Fixture to use in a with() environment within a test to enable caching in the with-statement.
-    Requires to provide an absolutpath to the export file to load or export to.
+    Fixture to use in a with block
+    - Before the block the given cache is loaded (if it exists)
+    - within this block the caching of AiiDA is enabled.
+    - At the end an AiiDA export can be created (if test data should be overwritten)
+    Requires an absolute path to the export file to load or export to.
     Export the provenance of all calcjobs nodes within the test.
     """
 
@@ -314,6 +319,11 @@ def with_export_cache(export_cache, load_cache, absolute_archive_path):
     def _with_export_cache(data_dir_abspath, calculation_class=None, overwrite=False):
         """
         Contextmanager to run calculation within, which aiida graph gets exported
+
+        :param data_dir_abspath: Path to the AiiDA archive to load/export
+        :param calculation_class: limit what kind of Calcjobs are considered in the archive
+        :param overwrite: bool, if True any existing archive is overwritten at the end of
+                          the with block
         """
 
         full_export_path = absolute_archive_path(data_dir_abspath)
@@ -370,6 +380,8 @@ def hash_code_by_entrypoint(monkeypatch, testing_config):
         try:
             self.get_attribute
         except AttributeError:
+            #Case for AiiDA 2.0: The self argument here is a
+            #NodeCaching class not the actual node
             self = self._node
         # computer names are changed by aiida-core if imported and do not have same uuid.
         return [self.get_attribute(key='input_plugin')]  #, self.get_computer_name()]
@@ -383,6 +395,8 @@ def hash_code_by_entrypoint(monkeypatch, testing_config):
             self._hash_ignored_attributes  #pylint: disable=pointless-statement
             hash_ignored_inputs = self._hash_ignored_inputs
         except AttributeError:
+            #Case for AiiDA 2.0: The self argument here is a
+            #NodeCaching class not the actual node
             hash_ignored_inputs = self._hash_ignored_inputs
             self = self._node
 
@@ -419,6 +433,13 @@ def hash_code_by_entrypoint(monkeypatch, testing_config):
         #pprint('{} objects to hash calcjob: {}'.format(type(self), objects))
         return objects
 
+    #Monkeypatch the relevant methods in aiida-core
+    #Note: for AiiDA 2.0 it is not enough to mokeypatch the methods on the
+    #      respective classes since the caching methods are separated from the
+    #      node classes and are available through a cached property on a completely
+    #      spearate Caching class. Therefore to have the same effect a subclass of the
+    #      Caching class with the modified methods is created and the Node classes are
+    #      monkeypatched on the Nodes, i.e. the _CLS_NODE_CACHING attribute
     try:
         monkeypatch.setattr(Code, "_get_objects_to_hash", mock_objects_to_hash_code)
         monkeypatch.setattr(CalcJobNode, "_get_objects_to_hash", mock_objects_to_hash_calcjob)
@@ -454,6 +475,8 @@ def hash_code_by_entrypoint(monkeypatch, testing_config):
         try:
             self._hash_ignored_attributes
         except AttributeError:
+            #Case for AiiDA 2.0: The self argument here is a
+            #NodeCaching class not the actual node
             self = self._node
 
         class_name = self.__class__.__name__
@@ -477,6 +500,12 @@ def hash_code_by_entrypoint(monkeypatch, testing_config):
         return objects
 
     # since we still want versioning for plugin datatypes and calcs we only monkeypatch aiida datatypes
+    #Note: for AiiDA 2.0 it is not enough to mokeypatch the methods on the
+    #      respective classes since the caching methods are separated from the
+    #      node classes and are available through a cached property on a completely
+    #      spearate Caching class. Therefore to have the same effect a subclass of the
+    #      Caching class with the modified methods is created and the Node classes are
+    #      monkeypatched on the Nodes, i.e. the _CLS_NODE_CACHING attribute
     classes_to_patch = [Dict, SinglefileData, List, FolderData, RemoteData, StructureData]
     for classe in classes_to_patch:
         try:
@@ -503,10 +532,10 @@ def run_with_cache(export_cache, load_cache, absolute_archive_path):
     """
     Fixture to automatically import an aiida graph for a given process builder.
     """
-    def _run_with_cache( # type: ignore
-        builder: ty.Union[dict, ProcessBuilderNamespace
-                          ],  #aiida process builder class, or dict, if process class is given
-        process_class=None,
+
+    def _run_with_cache( #type: ignore
+        builder: ty.Union[dict, ProcessBuilderNamespace],
+        process_class: ty.Union[Process, None]=None,
         label: str = '',
         overwrite: bool = False,
         data_dir: ty.Union[str, pathlib.Path, None] = None
@@ -517,19 +546,17 @@ def run_with_cache(export_cache, load_cache, absolute_archive_path):
         If the cache does not exists, it still runs the builder but creates an
         export afterwards.
 
-        Inputs:
-
-        builder : AiiDA Process builder class,
-        overwrite: enforce exporting of a new cache
-        #ignore_nodes : list string, ignore input nodes with these labels/link labels to ignore in hash.
-        # needed?
+        :param builder: AiiDA Process builder or a dictionary of inputs
+        :param process_class: Process class. only necessary if the inputs are given as a dict
+        :param overwrite: enforce exporting of a new cache
+        :param data_dir: Optional path to the AiiDA archive
         """
 
         cache_exists = False
-        bui_hash, _ = get_hash_process(builder)  # pylint: disable=unused-variable
+        bui_hash, _ = get_hash_process(builder)
 
         if process_class is None:  # and isinstance(builder, dict):
-            process_class = builder.process_class  # type: ignore
+            process_class = builder.process_class  #type: ignore
             # we assume ProcessBuilder, since type(ProcessBuilder) is abc
         #else:
         #    raise TypeError(
