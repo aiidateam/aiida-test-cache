@@ -110,6 +110,16 @@ def pytest_addoption(parser):
         help="If True the stored archives can be migrated if needed."
     )
 
+def _rehash_processes():
+    """
+    Recompute the hashes for all ProcessNodes
+    """
+    qub = QueryBuilder()
+    qub.append(ProcessNode)
+    to_hash = qub.all()
+    for node1 in to_hash:
+        node1[0].rehash()
+
 
 def unnest_dict(nested_dict: ty.Union[dict, ProcessBuilderNamespace]) -> dict:  # type: ignore
     """
@@ -219,19 +229,15 @@ def export_cache(hash_code_by_entrypoint, absolute_archive_path):
         :param overwrite: bool, default=True, if existing export is overwritten
         """
 
-        # we rehash before the export, what goes in the hash is monkeypatched
-        qub = QueryBuilder()
-        qub.append(ProcessNode)  # rehash all ProcesNodes
-        to_hash = qub.all()
-        for node1 in to_hash:
-            node1[0].rehash()
-
+        # we rehash before the export, since what goes in the hash is monkeypatched
+        _rehash_processes()
         full_export_path = absolute_archive_path(savepath)
 
         if isinstance(node, list):
             to_export = node
         else:
             to_export = [node]
+
         create_archive(
             to_export, filename=full_export_path, overwrite=overwrite, include_comments=True
         )  # extras are automatically included
@@ -291,11 +297,7 @@ def load_cache(hash_code_by_entrypoint, absolute_archive_path, import_with_migra
         # for this we rehash all process nodes
         # this way we use the full caching mechanism of aiida-core.
         # currently this should only cache CalcJobNodes
-        qub = QueryBuilder()
-        qub.append(ProcessNode)  # query for all ProcesNodes
-        to_hash = qub.all()
-        for node1 in to_hash:
-            node1[0].rehash()
+        _rehash_processes()
 
     return _load_cache
 
