@@ -45,7 +45,6 @@ def run() -> None:
         if not executable_path:
             sys.exit("No existing output, and no executable specified.")
 
-        # replace executable path in submit file and run calculation
         subprocess.call([executable_path, *sys.argv[1:]])
 
         # back up results to data directory
