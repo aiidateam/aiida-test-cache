@@ -7,5 +7,7 @@ dist
 .vscode
 .mypy_cache
 .idea/
+.tox/
 .DS_Store
 pip-wheel-metadata/
+tests/mock_code/data/

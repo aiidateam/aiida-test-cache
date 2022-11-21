@@ -33,7 +33,7 @@ def pytest_addoption(parser):
     """Add pytest command line options."""
     parser.addoption(
         "--testing-config-action",
-        type=click.Choice((c.value for c in ConfigActions)),
+        type=click.Choice([c.value for c in ConfigActions]),
         default=ConfigActions.READ.value,
         help=f"Read {CONFIG_FILE_NAME} config file if present ('read'), require config file ('require') or " \
              "generate new config file ('generate').",
