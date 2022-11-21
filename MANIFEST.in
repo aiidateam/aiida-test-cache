@@ -1,3 +1,0 @@
-include setup.json
-include LICENSE.txt
-include utils/fastentrypoints.py

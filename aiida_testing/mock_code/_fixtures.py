@@ -33,7 +33,7 @@ def pytest_addoption(parser):
     """Add pytest command line options."""
     parser.addoption(
         "--testing-config-action",
-        type=click.Choice((c.value for c in ConfigActions)),
+        type=click.Choice([c.value for c in ConfigActions]),
         default=ConfigActions.READ.value,
         help=f"Read {CONFIG_FILE_NAME} config file if present ('read'), require config file ('require') or " \
              "generate new config file ('generate').",
@@ -169,14 +169,29 @@ def mock_code_factory(
                 f"Configuration file {CONFIG_FILE_NAME} does not specify path to executable for code label '{label}'."
             )
         code_executable_path = mock_code_config.get(label, 'TO_SPECIFY')
-        if (not code_executable_path) and executable_name:
-            code_executable_path = shutil.which(executable_name) or 'NOT_FOUND'
+
+        if code_executable_path != 'TO_SPECIFY' and \
+           not pathlib.Path(code_executable_path).is_absolute():
+            #Relative paths are interpreted with respect to the
+            #aiida-testing-config.yml file
+            relative_path = _config.file_path.parent / code_executable_path
+            code_executable_path = os.fspath(relative_path)
+            if not relative_path.exists():
+                raise ValueError(
+                    f"Relative path {code_executable_path} in {CONFIG_FILE_NAME} "
+                    f"does not exist for code label '{label}'."
+                )
+
+        elif code_executable_path == 'TO_SPECIFY' and executable_name:
+            code_executable_path = shutil.which(executable_name)
+            if code_executable_path is None:
+                raise ValueError(
+                    f"Executable {executable_name} not found on PATH for code label '{label}'."
+                )
+
         if _config_action == ConfigActions.GENERATE.value:
             mock_code_config[label] = code_executable_path
-        if code_executable_path not in ('TO_SPECIFY', 'NOT_FOUND') and \
-            not pathlib.Path(code_executable_path).is_absolute():
-            code_executable_path = os.fspath(_config.file_path / code_executable_path)
-
+        print(code_executable_path)
         code = Code(
             input_plugin_name=entry_point,
             remote_computer_exec=[aiida_localhost, mock_executable_path]

@@ -1,2 +1,3 @@
 mock_code:
   diff: /usr/bin/diff
+  diff-relative: ./diff

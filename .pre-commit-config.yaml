@@ -8,12 +8,6 @@ repos:
     args: ['-i']
     additional_dependencies: [toml]
 
-- repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v0.740
-  hooks:
-  - id: mypy
-    exclude: '^(docs/)|(examples/)|(utils/fastentrypoints.py)'
-
 - repo: local
   hooks:
 
@@ -22,4 +16,14 @@ repos:
     entry: pylint
     types: [file, python]
     language: system
-    exclude: '^(docs/)|(examples/)|(utils/fastentrypoints.py)'
+    exclude: '^(docs/)|(examples/)'
+
+  -  id: mypy
+     name: mypy
+     entry: mypy
+     args: [--config-file=pyproject.toml]
+     language: python
+     types: [python]
+     require_serial: true
+     pass_filenames: true
+     exclude: '^(docs/)|(examples/)'

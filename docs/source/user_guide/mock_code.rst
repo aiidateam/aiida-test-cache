@@ -68,7 +68,7 @@ Finally, we can use our fixture in our tests as if it would provide a normal :py
             'file1': file1,
             'file2': file2,
         }
-        results, node = run_get_node( CalculationFactory('diff'), code=mocked_diff, **inputs)
+        results, node = run_get_node(CalculationFactory('diff'), **inputs)
         assert node.is_finished_ok
 
 When running the test via ``pytest`` for the first time, ``aiida-mock-code`` will pipe through to the actual ``diff`` executable.
