@@ -46,8 +46,7 @@ def run() -> None:
             sys.exit("No existing output, and no executable specified.")
 
         # replace executable path in submit file and run calculation
-        replace_submit_file(executable_path=executable_path)
-        subprocess.call(['bash', SUBMIT_FILE])
+        subprocess.call([executable_path, *sys.argv[1:]])
 
         # back up results to data directory
         os.makedirs(res_dir)
@@ -102,28 +101,6 @@ def strip_submit_content(aiidasubmit_content_bytes: bytes) -> bytes:
     # arguments.
     lines = (line.split("aiida-mock-code'")[-1] for line in lines)
     return '\n'.join(lines).encode()
-
-
-def replace_submit_file(executable_path: str) -> None:
-    """
-    Replace the executable specified in the AiiDA submit file, and
-    strip the AIIDA_MOCK environment variables.
-    """
-    with open(SUBMIT_FILE, 'r', encoding='utf8') as submit_file:
-        submit_file_content = submit_file.read()
-
-    submit_file_res_lines = []
-    for line in submit_file_content.splitlines():
-        if 'export AIIDA_MOCK' in line:
-            continue
-        if 'aiida-mock-code' in line:
-            submit_file_res_lines.append(
-                f"'{executable_path}' " + line.split("aiida-mock-code'")[1]
-            )
-        else:
-            submit_file_res_lines.append(line)
-    with open(SUBMIT_FILE, 'w', encoding='utf8') as submit_file:
-        submit_file.write('\n'.join(submit_file_res_lines))
 
 
 def copy_files(
