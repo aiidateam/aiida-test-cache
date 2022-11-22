@@ -10,4 +10,3 @@ dist
 .tox/
 .DS_Store
 pip-wheel-metadata/
-tests/mock_code/data/
