@@ -17,8 +17,6 @@ First, we want to define a fixture for our mocked code in the ``conftest.py``:
     import os
     import pytest
 
-    pytest_plugins = ['aiida.manage.tests.pytest_fixtures', 'aiida_testing.mock_code']
-
     # Directory where to store outputs for known inputs (usually tests/data)
     DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 

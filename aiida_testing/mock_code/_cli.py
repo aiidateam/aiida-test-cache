@@ -53,17 +53,16 @@ def run() -> None:
         if regenerate_data:
             _log("Regenerating data")
             shutil.rmtree(res_dir)
+    elif fail_on_missing:
+        _log(f"ERROR: Missing cached data: {res_dir}")
+        sys.exit("Missing cached data")
     else:
         _log(f"Cached directory does not exist: {res_dir}")
 
-        if fail_on_missing:
-            _log(f"ERROR: Failing on missing cached data: {res_dir}")
-            sys.exit("Missing cached data")
-
     if not res_dir.exists():
         if not executable_path:
-            _log(f"Failing on missing cached data: {res_dir}")
-            sys.exit("ERROR: No existing output, and no executable specified.")
+            _log("ERROR: No existing cache, and no executable specified.")
+            sys.exit("No existing cache, and no executable specified.")
 
         _log(f"Regenerating with executable: {executable_path}")
 

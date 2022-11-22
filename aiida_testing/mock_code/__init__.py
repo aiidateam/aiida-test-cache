@@ -14,3 +14,6 @@ __all__ = (
     "testing_config",
     "mock_code_factory",
 )
+
+# ensure aiida's pytest plugin is loaded, which we rely on
+pytest_plugins = ['aiida.manage.tests.pytest_fixtures']

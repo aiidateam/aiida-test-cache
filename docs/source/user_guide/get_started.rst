@@ -16,8 +16,6 @@ Use the following commands to install ``aiida-testing``::
 Usage
 +++++
 
-To use the pytest fixtures provided by ``aiida-testing`` in your tests,
-you need to add the corresponding submodule to the ``pytest_plugins``
-list in your ``conftest.py``. For example::
+Once installed the pytest fixtures should show up in::
 
-    pytest_plugins = ['aiida.manage.tests.pytest_fixtures', 'aiida_testing.mock_code', 'aiida_testing.export_cache']
+    pytest --fixtures

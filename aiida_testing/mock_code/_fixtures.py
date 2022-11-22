@@ -92,7 +92,7 @@ def testing_config(testing_config_action):  # pylint: disable=redefined-outer-na
 @pytest.fixture(scope='function')
 def mock_code_factory(
     aiida_localhost, testing_config, testing_config_action, mock_regenerate_test_data,
-    mock_fail_on_missing, tmp_path: pathlib.Path
+    mock_fail_on_missing, request: pytest.FixtureRequest, tmp_path: pathlib.Path
 ):  # pylint: disable=too-many-arguments,redefined-outer-name
     """
     Fixture to create a mock AiiDA Code.
@@ -107,8 +107,8 @@ def mock_code_factory(
 
     def _get_mock_code(
         label: str,
-        entry_point: str,
-        data_dir_abspath: ty.Union[str, pathlib.Path],
+        entry_point: ty.Optional[str] = None,
+        data_dir_abspath: ty.Union[None, str, pathlib.Path] = None,
         ignore_files: ty.Iterable[str] = ('_aiidasubmit.sh', ),
         ignore_paths: ty.Iterable[str] = ('_aiidasubmit.sh', ),
         executable_name: str = '',
@@ -116,7 +116,7 @@ def mock_code_factory(
         _config_action: str = testing_config_action,
         _regenerate_test_data: bool = mock_regenerate_test_data,
         _fail_on_missing: bool = mock_fail_on_missing,
-    ):  # pylint: disable=too-many-arguments
+    ):  # pylint: disable=too-many-arguments,too-many-branches
         """
         Creates a mock AiiDA code. If the same inputs have been run previously,
         the results are copied over from the corresponding sub-directory of
@@ -161,6 +161,12 @@ def mock_code_factory(
         for arg in (ignore_paths, ignore_files):
             assert isinstance(arg, collections.abc.Iterable) and not isinstance(arg, str), \
                 f"'ignore_files' and 'ignore_paths' arguments must be tuples or lists, found {type(arg)}"
+
+        if entry_point is None:
+            entry_point = label
+        if data_dir_abspath is None:
+            request.node.path.parent.joinpath("data").mkdir(exist_ok=True)
+            data_dir_abspath = request.node.path.parent / "data"
 
         # we want to set a custom prepend_text, which is why the code
         # can not be reused.
