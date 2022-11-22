@@ -191,29 +191,25 @@ def mock_code_factory(
             raise ValueError(
                 f"Configuration file {CONFIG_FILE_NAME} does not specify path to executable for code label '{label}'."
             )
-        code_executable_path = mock_code_config.get(label, 'TO_SPECIFY')
 
-        if code_executable_path != 'TO_SPECIFY' and \
-           not pathlib.Path(code_executable_path).is_absolute():
-            #Relative paths are interpreted with respect to the
-            #aiida-testing-config.yml file
-            relative_path = _config.file_path.parent / code_executable_path
+        code_executable_path = mock_code_config.get(label, '')
+        if label in mock_code_config and not pathlib.Path(mock_code_config[label]).is_absolute():
+            # Relative paths are interpreted with respect to the
+            # aiida-testing-config.yml file
+            relative_path = _config.file_path.parent / mock_code_config[label]
             code_executable_path = os.fspath(relative_path)
             if not relative_path.exists():
                 raise ValueError(
                     f"Relative path {code_executable_path} in {CONFIG_FILE_NAME} "
                     f"does not exist for code label '{label}'."
                 )
-
-        elif code_executable_path == 'TO_SPECIFY' and executable_name:
-            code_executable_path = shutil.which(executable_name)
-            if code_executable_path is None:
+        elif label not in mock_code_config and executable_name:
+            _exec_path = shutil.which(executable_name)
+            if _exec_path is None:
                 raise ValueError(
                     f"Executable {executable_name} not found on PATH for code label '{label}'."
                 )
-
-        if code_executable_path == 'TO_SPECIFY':
-            code_executable_path = ""
+            code_executable_path = _exec_path
 
         if _config_action == ConfigActions.GENERATE.value:
             mock_code_config[label] = code_executable_path
