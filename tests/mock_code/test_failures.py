@@ -50,7 +50,7 @@ def test_failure_no_cache(pytester: pytest.Pytester):
     pytester.path.joinpath("file2.txt").write_text("b")
     pytester.makepyfile(PYFILE)
     result = pytester.runpytest_subprocess("-k", "test_basic", "--mock-fail-on-missing")
-    result.stdout.re_match_lines([r".*ERROR: Missing cached data.*"])
+    result.stdout.re_match_lines([r".*ERROR: No cache hit for.*"])
 
 
 def test_failure_no_executable(pytester: pytest.Pytester):

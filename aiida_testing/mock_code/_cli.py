@@ -49,15 +49,15 @@ def run() -> None:
     res_dir = Path(data_dir) / f"mock-{label}-{hash_digest}"
 
     if res_dir.exists():
-        _log(f"Cached directory exists: {res_dir}")
+        _log(f"Cache hit: {res_dir}")
         if regenerate_data:
             _log("Regenerating data")
             shutil.rmtree(res_dir)
     elif fail_on_missing:
-        _log(f"ERROR: Missing cached data: {res_dir}")
+        _log(f"ERROR: No cache hit for: {res_dir}")
         sys.exit("Missing cached data")
     else:
-        _log(f"Cached directory does not exist: {res_dir}")
+        _log(f"No cache hit for: {res_dir}")
 
     if not res_dir.exists():
         if not executable_path:
