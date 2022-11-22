@@ -64,7 +64,7 @@ def run() -> None:
             _log("ERROR: No existing cache, and no executable specified.")
             sys.exit("No existing cache, and no executable specified.")
 
-        _log(f"Regenerating with executable: {executable_path}")
+        _log(f"Running with executable: {executable_path}")
 
         subprocess.call([executable_path, *sys.argv[1:]])
 
