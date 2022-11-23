@@ -5,7 +5,6 @@ Defines a pytest fixture for creating mock AiiDA codes.
 
 import uuid
 import shutil
-import inspect
 import pathlib
 import typing as ty
 import warnings
@@ -17,7 +16,8 @@ import pytest
 
 from aiida.orm import Code
 
-from ._env_keys import EnvKeys
+from ._env_keys import MockVariables
+from ._hasher import InputHasher
 from .._config import Config, CONFIG_FILE_NAME, ConfigActions
 
 __all__ = (
@@ -112,11 +112,12 @@ def mock_code_factory(
         ignore_files: ty.Iterable[str] = ('_aiidasubmit.sh', ),
         ignore_paths: ty.Iterable[str] = ('_aiidasubmit.sh', ),
         executable_name: str = '',
+        hasher: ty.Type[InputHasher] = InputHasher,
         _config: Config = testing_config,
         _config_action: str = testing_config_action,
         _regenerate_test_data: bool = mock_regenerate_test_data,
         _fail_on_missing: bool = mock_fail_on_missing,
-    ):  # pylint: disable=too-many-arguments,too-many-branches
+    ):  # pylint: disable=too-many-arguments,too-many-branches,too-many-locals
         """
         Creates a mock AiiDA code. If the same inputs have been run previously,
         the results are copied over from the corresponding sub-directory of
@@ -167,6 +168,9 @@ def mock_code_factory(
         if data_dir_abspath is None:
             request.node.path.parent.joinpath("data").mkdir(exist_ok=True)
             data_dir_abspath = request.node.path.parent / "data"
+        assert issubclass(
+            hasher, InputHasher
+        ), f"hasher must be a subclass of {InputHasher.__name__}"
 
         # we want to set a custom prepend_text, which is why the code
         # can not be reused.
@@ -218,20 +222,18 @@ def mock_code_factory(
             remote_computer_exec=[aiida_localhost, mock_executable_path]
         )
         code.label = code_label
-        code.set_prepend_text(
-            inspect.cleandoc(
-                f"""
-                export {EnvKeys.LOG_FILE.value}="{log_file.absolute()}"
-                export {EnvKeys.LABEL.value}="{label}"
-                export {EnvKeys.DATA_DIR.value}="{data_dir_abspath}"
-                export {EnvKeys.EXECUTABLE_PATH.value}="{code_executable_path}"
-                export {EnvKeys.IGNORE_FILES.value}="{':'.join(ignore_files)}"
-                export {EnvKeys.IGNORE_PATHS.value}="{':'.join(ignore_paths)}"
-                export {EnvKeys.REGENERATE_DATA.value}={'True' if _regenerate_test_data else 'False'}
-                export {EnvKeys.FAIL_ON_MISSING.value}={'True' if _fail_on_missing else 'False'}
-                """
-            )
+        variables = MockVariables(
+            log_file=log_file.absolute(),
+            label=label,
+            data_dir=data_dir_pl,
+            executable_path=code_executable_path,
+            ignore_files=ignore_files,
+            ignore_paths=ignore_paths,
+            regenerate_data=_regenerate_test_data,
+            fail_on_missing=_fail_on_missing,
+            _hasher=hasher,
         )
+        code.set_prepend_text(variables.to_env())
 
         code.store()
         return code

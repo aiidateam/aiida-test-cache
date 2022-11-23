@@ -4,6 +4,7 @@ Defines fixtures for mocking AiiDA codes, with caching at the level of
 the executable.
 """
 
+from ._hasher import InputHasher
 from ._fixtures import *
 
 # Note: This is necessary for the sphinx doc - otherwise it does not find aiida_testing.mock_code.mock_code_factory
