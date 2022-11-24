@@ -1,7 +1,7 @@
 [![Build Status](https://github.com/aiidateam/aiida-testing/workflows/ci/badge.svg)](https://github.com/aiidateam/aiida-testing/actions)
 [![Docs status](https://readthedocs.org/projects/aiida-testing/badge)](http://aiida-testing.readthedocs.io/)
 [![PyPI version](https://badge.fury.io/py/aiida-testing.svg)](https://badge.fury.io/py/aiida-testing)
-[![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/aiidateam/aiida-testing/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/aiidateam/aiida-testing/blob/main/LICENSE)
 
 # aiida-testing
 

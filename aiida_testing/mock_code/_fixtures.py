@@ -225,6 +225,7 @@ def mock_code_factory(
         variables = MockVariables(
             log_file=log_file.absolute(),
             label=label,
+            test_name=request.node.name,
             data_dir=data_dir_pl,
             executable_path=code_executable_path,
             ignore_files=ignore_files,

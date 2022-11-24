@@ -20,6 +20,7 @@ class MockVariables:  # pylint: disable=too-many-instance-attributes
 
     log_file: Path
     label: str
+    test_name: str
     data_dir: Path
     executable_path: str
     ignore_files: ty.Iterable[str]
@@ -36,6 +37,7 @@ class MockVariables:  # pylint: disable=too-many-instance-attributes
         return cls(
             log_file=Path(os.environ[_EnvKeys.LOG_FILE.value]),
             label=os.environ[_EnvKeys.LABEL.value],
+            test_name=os.environ[_EnvKeys.TEST_NAME.value],
             data_dir=Path(os.environ[_EnvKeys.DATA_DIR.value]),
             executable_path=os.environ[_EnvKeys.EXECUTABLE_PATH.value],
             ignore_files=os.environ[_EnvKeys.IGNORE_FILES.value].split(":"),
@@ -62,6 +64,7 @@ class MockVariables:  # pylint: disable=too-many-instance-attributes
         string = inspect.cleandoc(
             f"""
                 export {_EnvKeys.LOG_FILE.value}="{self.log_file}"
+                export {_EnvKeys.TEST_NAME.value}="{self.test_name.replace('"', "_")}"
                 export {_EnvKeys.LABEL.value}="{self.label}"
                 export {_EnvKeys.DATA_DIR.value}="{self.data_dir}"
                 export {_EnvKeys.EXECUTABLE_PATH.value}="{self.executable_path}"
@@ -87,6 +90,7 @@ class _EnvKeys(Enum):
     """
 
     LOG_FILE = "AIIDA_MOCK_LOG_FILE"
+    TEST_NAME = "AIIDA_MOCK_TEST_NAME"
     LABEL = "AIIDA_MOCK_LABEL"
     DATA_DIR = "AIIDA_MOCK_DATA_DIR"
     EXECUTABLE_PATH = "AIIDA_MOCK_EXECUTABLE_PATH"
