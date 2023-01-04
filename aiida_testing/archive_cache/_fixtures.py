@@ -9,27 +9,24 @@ import os
 import pathlib
 from functools import partial
 from contextlib import contextmanager
-import typing as ty
 import shutil
 import typing as ty
 
 import pytest
 
 from aiida import plugins
-from aiida.engine import run_get_node
-from aiida.engine import ProcessBuilderNamespace, Process
 from aiida.common.links import LinkType
 from aiida.orm import Code, Dict, SinglefileData, List, FolderData, RemoteData, StructureData
 from aiida.orm import CalcJobNode, QueryBuilder, Node
 from aiida.manage.caching import enable_caching
 from aiida.cmdline.utils.echo import echo_warning
 
-from ._utils import rehash_processes, get_hash_process, monkeypatch_hash_objects, get_node_from_hash_objects_caller
+from ._utils import rehash_processes, monkeypatch_hash_objects, get_node_from_hash_objects_caller
 from .._config import Config
 
 __all__ = (
-    "pytest_addoption", "absolute_archive_path", "run_with_cache", "load_node_archive",
-    "create_node_archive", "enable_archive_cache", "liberal_hash", "archive_cache_forbid_migration",
+    "pytest_addoption", "absolute_archive_path", "load_node_archive", "create_node_archive",
+    "enable_archive_cache", "liberal_hash", "archive_cache_forbid_migration",
     "import_with_migrate_fixture"
 )
 
@@ -423,59 +420,3 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
             node_class,  #type: ignore[arg-type]
             mock_objects_to_hash
         )
-
-
-@pytest.fixture(scope='function')
-def run_with_cache(create_node_archive, load_node_archive, absolute_archive_path):
-    """
-    Fixture to automatically import an aiida graph for a given process builder.
-    """
-
-    def _run_with_cache( #type: ignore
-        builder: ty.Union[dict, ProcessBuilderNamespace],
-        process_class: ty.Union[Process, None]=None,
-        label: str = '',
-        overwrite: bool = False,
-        data_dir: ty.Union[str, pathlib.Path, None] = None
-    ):
-        """
-        Function, which checks if a aiida export for a given Process builder exists,
-        if it does it imports the aiida graph and runs the builder with caching.
-        If the cache does not exists, it still runs the builder but creates an
-        export afterwards.
-
-        :param builder: AiiDA Process builder or a dictionary of inputs
-        :param process_class: Process class. only necessary if the inputs are given as a dict
-        :param overwrite: enforce exporting of a new cache
-        :param data_dir: Optional path to the AiiDA archive
-        """
-        bui_hash, _ = get_hash_process(builder)
-
-        if process_class is None:
-            process_class = builder.process_class  #type: ignore
-
-        name = f"{label}{process_class.__name__}-nodes-{bui_hash}"
-        path = name
-        if data_dir is not None:
-            path = os.fspath(pathlib.Path(data_dir) / name)
-        full_import_path = absolute_archive_path(f"{path}.tar.gz", overwrite=overwrite)
-
-        archive_exists = os.path.exists(full_import_path)
-
-        # import data from previous run to use caching
-        if archive_exists:
-            load_node_archive(full_import_path)
-
-        # Run the specified process
-        with enable_caching():  # should enable caching globally in this python interpreter
-            if isinstance(builder, dict):
-                res, resnode = run_get_node(process_class, **builder)
-            else:
-                res, resnode = run_get_node(builder)
-
-        if not archive_exists or overwrite:
-            create_node_archive(node=resnode, savepath=full_import_path, overwrite=overwrite)
-
-        return res, resnode
-
-    return _run_with_cache

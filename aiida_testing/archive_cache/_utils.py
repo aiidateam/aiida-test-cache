@@ -2,15 +2,12 @@
 Defines helper functions for the archive_cache pytest fixtures
 """
 import typing as ty
-import hashlib
 
 import pytest
 
-from aiida.orm import ProcessNode, QueryBuilder, Code, Node
-from aiida.engine import ProcessBuilderNamespace
-from aiida.common.hashing import make_hash
+from aiida.orm import ProcessNode, QueryBuilder, Node
 
-__all__ = ('rehash_processes', 'unnest_dict', 'get_hash_process', 'monkeypatch_hash_objects')
+__all__ = ('rehash_processes', 'monkeypatch_hash_objects')
 
 
 def rehash_processes() -> None:
@@ -22,51 +19,6 @@ def rehash_processes() -> None:
     to_hash = qub.all()
     for node1 in to_hash:
         node1[0].rehash()
-
-
-def unnest_dict(nested_dict: ty.Union[dict, ProcessBuilderNamespace]) -> dict:  #type: ignore
-    """
-    Returns a simple dictionary from a possible arbitrary nested dictionary
-    or Aiida ProcessBuilderNamespace by adding keys in dot notation, recursively
-    """
-    new_dict = {}
-    for key, val in nested_dict.items():
-        if isinstance(val, (dict, ProcessBuilderNamespace)):
-            unval = unnest_dict(val)  #recursive!
-            for key2, val2 in unval.items():
-                new_dict[f'{key}.{key2}'] = val2
-        else:
-            new_dict[str(key)] = val  #type: ignore
-    return new_dict
-
-
-def get_hash_process( #type: ignore
-    builder: ty.Union[dict, ProcessBuilderNamespace], input_nodes: ty.Union[list, None] = None
-):
-    """Create a hash from a builder/dictionary of inputs"""
-
-    if input_nodes is None:
-        input_nodes = []
-
-    # hashing the builder
-    # currently workchains are not hashed in AiiDA so we create a hash for the filename
-    unnest_builder = unnest_dict(builder)
-    md5sum = hashlib.md5()
-    for _, val in sorted(unnest_builder.items()):  # pylint: disable=unused-variable
-        if isinstance(val, Code):
-            continue  # we do not include the code in the hash, might be mocked
-            #TODO include the code to some extent #pylint: disable=fixme
-        if isinstance(val, Node):
-            if not val.is_stored:
-                val.store()
-            val_hash = val.get_hash()  # only works if nodes are stored!
-            input_nodes.append(val)
-        else:
-            val_hash = make_hash(val)
-        md5sum.update(val_hash.encode())
-    bui_hash = md5sum.hexdigest()
-
-    return bui_hash, input_nodes
 
 
 def monkeypatch_hash_objects(
