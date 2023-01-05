@@ -335,7 +335,9 @@ def enable_archive_cache(
             qub = QueryBuilder()
             qub.append(queryclass, tag='node')  # query for CalcJobs nodes
             to_export = [entry[0] for entry in qub.all()]
-            create_node_archive(nodes=to_export, savepath=full_archive_path, overwrite=overwrite)
+            create_node_archive(
+                nodes=to_export, archive_path=full_archive_path, overwrite=overwrite
+            )
 
     return _enable_archive_cache
 
