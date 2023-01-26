@@ -188,7 +188,14 @@ def absolute_archive_path(
             else:
                 default_data_dir = pathlib.Path(default_data_dir)
             if not default_data_dir.exists():
-                default_data_dir.mkdir()
+                try:
+                    default_data_dir.mkdir()
+                except OSError as exc:
+                    raise ValueError(
+                        f'Could not create the `{default_data_dir}` archive directory'
+                        'Please make sure that all parent directories exist'
+                    ) from exc
+
             full_archive_path = pathlib.Path(default_data_dir) / archive_path
 
         #Create a copy in a temporary directory of the archive if migration is allowed
