@@ -29,6 +29,7 @@ __all__ = (
     "enable_archive_cache",
     "liberal_hash",
     "archive_cache_forbid_migration",
+    "archive_cache_overwrite"
 )
 
 
@@ -40,6 +41,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=False,
         help="If True the stored archives cannot be migrated if their versions are incompatible."
     )
+    parser.addoption(
+        "--archive-cache-overwrite",
+        action="store_true",
+        default=False,
+        help=
+        "If True the stored archives are overwritten with the archive created by the current test run."
+    )
 
 
 @pytest.fixture(scope='session')
@@ -47,6 +55,14 @@ def archive_cache_forbid_migration(request: pytest.FixtureRequest) -> bool:
     """Read whether aiida is forbidden from migrating the test archives if their versions are incompatible."""
     return request.config.getoption( #type:ignore [no-any-return]
         "--archive-cache-forbid-migration"
+    )
+
+
+@pytest.fixture(scope='session')
+def archive_cache_overwrite(request: pytest.FixtureRequest) -> bool:
+    """Read whether the test archives should be overwritten in this test run."""
+    return request.config.getoption(  #type:ignore [no-any-return]
+        "--archive-cache-overwrite"
     )
 
 
@@ -81,14 +97,13 @@ def absolute_archive_path(
            - if no such option is specified a directory `caches` is used in the folder of the current test file
 
         :param archive_path: path to the AiiDA archive (will be used according to the rules above)
-        :param overwrite: If True the existing archive is supposed to be replaced at the end of the test
 
         .. note::
 
             If the archive at the determined absolute path exists, is allowed to be migrated
             , i.e. the `--archive-cache-forbid-migration` options is not specified,
-            and overwrite is False, the archive will be copied into a temporary directory created by
-            pytest
+            and overwrite is False (either argument or `--archive-cache-overwrite` cmdline option),
+            the archive will be copied into a temporary directory created by pytest
 
             This prevents unwanted test file changes, when testing AiiDA versions not matching the
             archive versions of the caches
@@ -135,7 +150,8 @@ def absolute_archive_path(
 
 @pytest.fixture(scope='function')
 def enable_archive_cache(
-    liberal_hash: None, archive_cache_forbid_migration: bool, absolute_archive_path: ty.Callable
+    liberal_hash: None, archive_cache_forbid_migration: bool, archive_cache_overwrite: bool,
+    absolute_archive_path: ty.Callable
 ) -> ty.Callable:
     """
     Fixture to use in a with block
@@ -162,6 +178,7 @@ def enable_archive_cache(
         :param overwrite: bool, if True any existing archive is overwritten at the end of
                           the with block
         """
+        overwrite = overwrite or archive_cache_overwrite
 
         full_archive_path = absolute_archive_path(archive_path, overwrite=overwrite)
         # check and load export

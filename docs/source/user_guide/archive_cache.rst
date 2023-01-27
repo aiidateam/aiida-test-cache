@@ -111,4 +111,7 @@ be ignored when computing the hash of this calcjob.
       --archive-cache-forbid-migration
                             If True the stored archives cannot be migrated
                             if their versions are incompatible.
+      --archive-cache-overwrite
+                            If True the stored archives are overwritten
+                            with the archive created by the current test run.
 
