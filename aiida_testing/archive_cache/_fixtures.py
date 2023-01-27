@@ -7,7 +7,6 @@ Meant to be useful for WorkChain tests.
 
 import os
 import pathlib
-from functools import partial
 from contextlib import contextmanager
 import shutil
 import typing as ty
@@ -17,17 +16,19 @@ import pytest
 from aiida import plugins
 from aiida.common.links import LinkType
 from aiida.orm import Code, Dict, SinglefileData, List, FolderData, RemoteData, StructureData
-from aiida.orm import CalcJobNode, QueryBuilder, Node
+from aiida.orm import CalcJobNode, QueryBuilder
 from aiida.manage.caching import enable_caching
-from aiida.cmdline.utils.echo import echo_warning
 
-from ._utils import rehash_processes, monkeypatch_hash_objects, get_node_from_hash_objects_caller
+from ._utils import monkeypatch_hash_objects, get_node_from_hash_objects_caller
+from ._utils import load_node_archive, create_node_archive
 from .._config import Config
 
 __all__ = (
-    "pytest_addoption", "absolute_archive_path", "load_node_archive", "create_node_archive",
-    "enable_archive_cache", "liberal_hash", "archive_cache_forbid_migration",
-    "import_with_migrate_fixture"
+    "pytest_addoption",
+    "absolute_archive_path",
+    "enable_archive_cache",
+    "liberal_hash",
+    "archive_cache_forbid_migration",
 )
 
 
@@ -47,89 +48,6 @@ def archive_cache_forbid_migration(request: pytest.FixtureRequest) -> bool:
     return request.config.getoption( #type:ignore [no-any-return]
         "--archive-cache-forbid-migration"
     )
-
-
-#Cross-compatible fixture for import AiiDA archives in 1.X and 2.X
-try:
-    from aiida.tools.archive import create_archive
-    from aiida.tools.archive import import_archive
-    import_archive = partial(import_archive, merge_extras=('n', 'c', 'u'), import_new_extras=True)
-
-    @pytest.fixture(scope='function', name="import_with_migrate")
-    def import_with_migrate_fixture(archive_cache_forbid_migration: bool) -> ty.Callable:
-        """
-        Import AiiDA Archive. If the version is incompatible
-        try to migrate the archive if --archive-cache-forbid-migration option is not specified
-        """
-
-        def _import_with_migrate(
-            archive_path: ty.Union[str, pathlib.Path], *args: ty.Any, **kwargs: ty.Any
-        ) -> None:
-            """
-            Import AiiDA Archive. If the version is incompatible
-            try to migrate the archive if --archive-cache-forbid-migration option is not specified
-            """
-            #pylint: disable=import-outside-toplevel
-            from aiida.tools.archive import get_format
-            from aiida.common.exceptions import IncompatibleStorageSchema
-
-            try:
-                import_archive(archive_path, *args, **kwargs)
-            except IncompatibleStorageSchema:
-                if not archive_cache_forbid_migration:
-                    echo_warning(
-                        f'incompatible version detected for {archive_path}, trying migration'
-                    )
-                    archive_format = get_format()
-                    version = archive_format.latest_version
-                    archive_format.migrate(
-                        archive_path, archive_path, version, force=True, compression=6
-                    )
-                    import_archive(archive_path, *args, **kwargs)
-                else:
-                    raise
-
-        return _import_with_migrate
-
-except ImportError:
-    from aiida.tools.importexport import export as create_archive  #type: ignore[import,no-redef]
-    from aiida.tools.importexport import import_data as import_archive  #type: ignore[no-redef]
-    import_archive = partial(import_archive, extras_mode_existing='ncu', extras_mode_new='import')
-
-    @pytest.fixture(scope='function', name="import_with_migrate")
-    def import_with_migrate_fixture(temp_dir, archive_cache_forbid_migration):
-        """
-        Import AiiDA Archive. If the version is incompatible
-        try to migrate the archive if --archive-cache-forbid-migration option is not specified
-        """
-
-        def _import_with_migrate(archive_path, *args, **kwargs):
-            """
-            Import AiiDA Archive. If the version is incompatible
-            try to migrate the archive if --archive-cache-forbid-migration option is not specified
-            """
-            #pylint: disable=import-outside-toplevel
-            from aiida.tools.importexport import EXPORT_VERSION, IncompatibleArchiveVersionError
-            # these are only availbale after aiida >= 1.5.0, maybe rely on verdi import instead
-            from aiida.tools.importexport import detect_archive_type
-            from aiida.tools.importexport.archive.migrators import get_migrator  #type: ignore[import]
-
-            try:
-                import_archive(archive_path, *args, **kwargs)
-            except IncompatibleArchiveVersionError:
-                if not archive_cache_forbid_migration:
-                    echo_warning(
-                        f'incompatible version detected for {archive_path}, trying migration'
-                    )
-                    migrator = get_migrator(detect_archive_type(archive_path))(archive_path)
-                    archive_path = migrator.migrate(
-                        EXPORT_VERSION, None, out_compression='none', work_dir=temp_dir
-                    )
-                    import_archive(archive_path, *args, **kwargs)
-                else:
-                    raise
-
-        return _import_with_migrate
 
 
 @pytest.fixture(scope='function')
@@ -216,74 +134,8 @@ def absolute_archive_path(
 
 
 @pytest.fixture(scope='function')
-def create_node_archive(liberal_hash: None, absolute_archive_path: ty.Callable) -> ty.Callable:
-    """Fixture to create an AiiDA archive from given node(s)"""
-
-    def _create_node_archive(
-        nodes: ty.Union[Node, ty.List[Node]],
-        archive_path: ty.Union[str, pathlib.Path],
-        overwrite: bool = True
-    ) -> None:
-        """
-        Function to export an AiiDA graph from a given node.
-        Uses the export functionalities of aiida-core
-
-        :param node: AiiDA node or list of nodes from whose graph the archive should be created
-        :param archive_path: str or path where the export file is to be saved
-        :param overwrite: bool, default=True, if True any existing export is overwritten
-        """
-
-        # rehash before the export, since what goes in the hash is monkeypatched
-        rehash_processes()
-        full_export_path = absolute_archive_path(archive_path, overwrite=overwrite)
-
-        if isinstance(nodes, list):
-            to_export = nodes
-        else:
-            to_export = [nodes]
-
-        create_archive(
-            to_export, filename=full_export_path, overwrite=overwrite, include_comments=True
-        )  # extras are automatically included
-
-    return _create_node_archive
-
-
-@pytest.fixture(scope='function')
-def load_node_archive(
-    liberal_hash: None, absolute_archive_path: ty.Callable, import_with_migrate: ty.Callable
-) -> ty.Callable:
-    """Fixture to load a cached AiiDA graph"""
-
-    def _load_node_archive(archive_path: ty.Union[str, pathlib.Path]) -> None:
-        """
-        Function to import an AiiDA graph
-
-        :param archive_path: str or path to the AiiDA archive file to load
-        :raises : FileNotFoundError, if import file is non existent
-        """
-        # relative paths given will be completed with cwd
-        full_import_path = absolute_archive_path(archive_path)
-
-        if os.path.exists(full_import_path) and os.path.isfile(full_import_path):
-            # import cache, also import extras
-            import_with_migrate(full_import_path)
-        else:
-            raise FileNotFoundError(f"File: {full_import_path} to be imported does not exist.")
-
-        # need to rehash after import, otherwise cashing does not work
-        # for this we rehash all process nodes
-        # this way we use the full caching mechanism of aiida-core.
-        # currently this should only cache CalcJobNodes
-        rehash_processes()
-
-    return _load_node_archive
-
-
-@pytest.fixture(scope='function')
 def enable_archive_cache(
-    create_node_archive: ty.Callable, load_node_archive: ty.Callable,
-    absolute_archive_path: ty.Callable
+    liberal_hash: None, archive_cache_forbid_migration: bool, absolute_archive_path: ty.Callable
 ) -> ty.Callable:
     """
     Fixture to use in a with block
@@ -315,7 +167,7 @@ def enable_archive_cache(
         # check and load export
         export_exists = os.path.isfile(full_archive_path)
         if export_exists:
-            load_node_archive(full_archive_path)
+            load_node_archive(full_archive_path, forbid_migration=archive_cache_forbid_migration)
 
         # default enable globally for all jobcalcs
         identifier = None

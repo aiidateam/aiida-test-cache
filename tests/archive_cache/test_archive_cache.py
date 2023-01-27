@@ -84,13 +84,13 @@ def check_diff_workchain_fixture():
 #### tests
 
 
-def test_create_node_archive(
-    mock_code_factory, generate_diff_inputs, create_node_archive, clear_database, tmp_path
-):
+def test_create_node_archive(mock_code_factory, generate_diff_inputs, clear_database, tmp_path):
     """
     Basic test of the create node archive fixture functionality,
     runs diff workchain and creates archive, check if archive was created
     """
+    from aiida_testing.archive_cache._utils import create_node_archive
+
     inputs = {'diff': generate_diff_inputs()}
     mock_code = mock_code_factory(
         label='diff',
@@ -116,8 +116,9 @@ def test_create_node_archive(
     assert os.path.isfile(archive_path)
 
 
-def test_load_node_archive(load_node_archive, clear_database):
+def test_load_node_archive(clear_database):
     """Basic test of the load node archive fixture functionality, check if archive is loaded"""
+    from aiida_testing.archive_cache._utils import load_node_archive
 
     # we check the number of nodes
     load_node_archive('diff_workchain.tar.gz')
