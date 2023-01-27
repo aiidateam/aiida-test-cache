@@ -116,12 +116,13 @@ def test_create_node_archive(mock_code_factory, generate_diff_inputs, clear_data
     assert os.path.isfile(archive_path)
 
 
-def test_load_node_archive(clear_database):
+def test_load_node_archive(clear_database, absolute_archive_path):
     """Basic test of the load node archive fixture functionality, check if archive is loaded"""
     from aiida_testing.archive_cache._utils import load_node_archive
 
+    full_archive_path = absolute_archive_path('diff_workchain.tar.gz')
     # we check the number of nodes
-    load_node_archive('diff_workchain.tar.gz')
+    load_node_archive(full_archive_path)
 
     qub = QueryBuilder()
     qub.append(Node)
