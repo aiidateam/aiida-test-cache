@@ -15,6 +15,8 @@ from aiida.orm import Node
 from aiida.orm.querybuilder import QueryBuilder
 from aiida.plugins import CalculationFactory
 
+from aiida_testing.archive_cache._utils import create_node_archive, load_node_archive
+
 CALC_ENTRY_POINT = 'diff'
 
 #### diff workchain for basic tests
@@ -89,7 +91,6 @@ def test_create_node_archive(mock_code_factory, generate_diff_inputs, clear_data
     Basic test of the create node archive fixture functionality,
     runs diff workchain and creates archive, check if archive was created
     """
-    from aiida_testing.archive_cache._utils import create_node_archive
 
     inputs = {'diff': generate_diff_inputs()}
     mock_code = mock_code_factory(
@@ -110,7 +111,7 @@ def test_create_node_archive(mock_code_factory, generate_diff_inputs, clear_data
     assert node.is_finished_ok
     assert res['computed_diff'].get_content() == res_diff
 
-    archive_path = tmp_path / 'diff_workchain.tar.gz'
+    archive_path = os.fspath(tmp_path / 'diff_workchain.tar.gz')
     create_node_archive(node, archive_path=archive_path)
 
     assert os.path.isfile(archive_path)
@@ -118,7 +119,6 @@ def test_create_node_archive(mock_code_factory, generate_diff_inputs, clear_data
 
 def test_load_node_archive(clear_database, absolute_archive_path):
     """Basic test of the load node archive fixture functionality, check if archive is loaded"""
-    from aiida_testing.archive_cache._utils import load_node_archive
 
     full_archive_path = absolute_archive_path('diff_workchain.tar.gz')
     # we check the number of nodes

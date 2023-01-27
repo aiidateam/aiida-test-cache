@@ -141,9 +141,9 @@ except ImportError:
             if not forbid_migration:
                 echo_warning(f'incompatible version detected for {archive_path}, trying migration')
                 migrator = get_migrator(detect_archive_type(archive_path))(archive_path)
-                with tempfile.TemporaryDirectory() as td:
+                with tempfile.TemporaryDirectory() as temp_dir:
                     archive_path = migrator.migrate(
-                        EXPORT_VERSION, None, out_compression='none', work_dir=td
+                        EXPORT_VERSION, None, out_compression='none', work_dir=temp_dir
                     )
                     import_archive(archive_path, *args, **kwargs)
             else:
