@@ -2,11 +2,9 @@
 Using :mod:`.archive_cache`
 ===========================
 
-:mod:`.archive_cache` provides three central fixture
+:mod:`.archive_cache` provides the :py:func:`~aiida_testing.archive_cache.enable_archive_cache` pytest fixture. It uses the AiiDA caching mechanisms to enable end-to-end tests of high-level workchains without executing individual `Calcjob` processes, if they can be cached from a stored archive.
 
-- :py:func:`~aiida_testing.archive_cache.enable_archive_cache` uses the AiiDA caching mechanisms to enable end-to-end tests of high-level workchains without executing individual `Calcjob` processes, if they can be cached from a stored archive
-
-Here an example for using the :py:func:`~aiida_testing.archive_cache.enable_archive_cache` to test a simple workchain using the ``diff`` code
+Here an example of using the :py:func:`~aiida_testing.archive_cache.enable_archive_cache` fixture to test a simple workchain using the ``diff`` code
 
 The workchain looks as follows
 
@@ -38,7 +36,7 @@ The workchain looks as follows
         self.out('computed_diff', computed_diff)
 
 
-And an example of using the above fixtures in a pytest test suite looks as follows
+And here is the test
 
 .. code-block:: python
 
@@ -64,7 +62,7 @@ And an example of using the above fixtures in a pytest test suite looks as follo
 The fixture will look for the AiiDA archive named ``diff_workchain.aiida`` in a folder named ``caches`` in the same directory as the test file, if nothing else is specified.
 If this exists the archive is imported and the AiiDA caching functionality is enabled. All calculations created inside the with block will use the cached nodes if their
 inputs and attributes match.
-If the archive does not exist the workchain will try to run the complete calculation and, afterwards, create the archive in the specified location.
+If the archive does not exist the, workchain will try to run the complete calculation and, afterwards, create the archive in the specified location.
 
 .. note::
     The hashing mechanism of AiiDA is modified within tests that use the fixture to ignore certain attributes that would invalidate the
@@ -86,7 +84,7 @@ the archive cache functionalities
                 diff: [..]
 
 An example, where it might be necessary to modify the options in the ``ignore`` namespace, is testing workchains across multiple AiiDA core versions.
-When using a AiiDA archive created in version ``1.6`` and testing the workchain with this archive in version ``2.X`` calcjob nodes contain new metadata
+When using a AiiDA archive created in version ``1.6`` and testing the workchain with this archive in version ``2.X``, calcjob nodes contain new metadata
 attributes (in this case ``environment_variables_double_quotes``). Therefore, in order to still reuse the ``1.6`` archive the added attributes have to
 be ignored when computing the hash of this calcjob. 
 
