@@ -208,3 +208,26 @@ def test_regenerate_test_data_executable(mock_code_factory, generate_diff_inputs
     # check that ignore_paths works
     assert not (datadir / '_aiidasubmit.sh').is_file()
     assert (datadir / 'file1.txt').is_file()
+
+
+def test_with_mpi(mock_code_factory, generate_diff_inputs, mock_disable_mpi_force):  # pylint: disable=unused-argument
+    """
+    Check that disabling MPI is respected.
+
+    Let a CalcJob explicitly request MPI and check it is still run without MPI.
+    """
+    mock_code = mock_code_factory(
+        label='diff',
+        data_dir_abspath=TEST_DATA_DIR,
+        entry_point=CALC_ENTRY_POINT,
+        ignore_paths=('_aiidasubmit.sh', 'file*txt')
+    )
+
+    inputs = generate_diff_inputs()
+    inputs['metadata']['options']['withmpi'] = True
+
+    res, node = run_get_node(CalculationFactory(CALC_ENTRY_POINT), code=mock_code, **inputs)
+    assert node.exit_status == 0, f"diff calculation failed with exit status {node.exit_status}"
+    assert node.is_finished_ok
+    assert node.get_option('withmpi') is False
+    check_diff_output(res)

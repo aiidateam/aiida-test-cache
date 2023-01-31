@@ -25,6 +25,8 @@ __all__ = (
     "testing_config_action",
     "mock_regenerate_test_data",
     "mock_fail_on_missing",
+    "mock_disable_mpi",
+    "mock_disable_mpi_force",
     "testing_config",
     "mock_code_factory",
 )
@@ -51,6 +53,12 @@ def pytest_addoption(parser):
         default=False,
         help="Fail if cached data is not found, rather than regenerating it.",
     )
+    parser.addoption(
+        "--mock-disable-mpi",
+        action="store_true",
+        default=False,
+        help="Run all calculations with `metadata.options.usempi=False`.",
+    )
 
 
 @pytest.fixture(scope='session')
@@ -69,6 +77,44 @@ def mock_regenerate_test_data(request):
 def mock_fail_on_missing(request):
     """Read whether to fail if cached data is not found, rather than regenerating it."""
     return request.config.getoption("--mock-fail-on-missing")
+
+
+def _mock_get_option(self, name: str):
+    """
+    Return the value of an option that was set for this CalcJobNode
+
+    Always return `False` if option is `withmpi`.
+
+    :param name: the option name
+    :return: the option value or None
+    :raises: ValueError for unknown option
+    """
+    if name == 'withmpi':
+        return False
+    return self.base.attributes.get(name, None)
+
+
+@pytest.fixture(scope='function')
+def mock_disable_mpi(request, monkeypatch):
+    """Enforce `withmpi=False` based on `--mock-disable-mpi` cli option.
+
+    This is achieved by monkey-patching the `CalcJob.get_option()` method.
+    """
+    if not request.config.getoption("--mock-disable-mpi"):
+        return
+
+    from aiida.orm import CalcJobNode  # pylint: disable=import-outside-toplevel
+    monkeypatch.setattr(CalcJobNode, 'get_option', _mock_get_option)
+
+
+@pytest.fixture(scope='function')
+def mock_disable_mpi_force(monkeypatch):
+    """Enforce `withmpi=False` independent of `--mock-disable-mpi` cli option.
+
+    Mostly required to test the functionality.
+    """
+    from aiida.orm import CalcJobNode  # pylint: disable=import-outside-toplevel
+    monkeypatch.setattr(CalcJobNode, 'get_option', _mock_get_option)
 
 
 @pytest.fixture(scope='session')
@@ -92,8 +138,8 @@ def testing_config(testing_config_action):  # pylint: disable=redefined-outer-na
 @pytest.fixture(scope='function')
 def mock_code_factory(
     aiida_localhost, testing_config, testing_config_action, mock_regenerate_test_data,
-    mock_fail_on_missing, request: pytest.FixtureRequest, tmp_path: pathlib.Path
-):  # pylint: disable=too-many-arguments,redefined-outer-name
+    mock_fail_on_missing, mock_disable_mpi, request: pytest.FixtureRequest, tmp_path: pathlib.Path
+):  # pylint: disable=too-many-arguments,redefined-outer-name,unused-argument
     """
     Fixture to create a mock AiiDA Code.
 
