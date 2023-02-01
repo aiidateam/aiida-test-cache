@@ -5,6 +5,7 @@ Test basic usage of the mock code on examples using aiida-diff.
 
 import shutil
 import os
+import json
 import tempfile
 from pathlib import Path
 
@@ -210,7 +211,7 @@ def test_regenerate_test_data_executable(mock_code_factory, generate_diff_inputs
     assert (datadir / 'file1.txt').is_file()
 
 
-def test_with_mpi(mock_code_factory, generate_diff_inputs, mock_disable_mpi_force):  # pylint: disable=unused-argument
+def test_with_mpi(mock_code_factory, generate_diff_inputs):  # pylint: disable=unused-argument
     """
     Check that disabling MPI is respected.
 
@@ -220,7 +221,8 @@ def test_with_mpi(mock_code_factory, generate_diff_inputs, mock_disable_mpi_forc
         label='diff',
         data_dir_abspath=TEST_DATA_DIR,
         entry_point=CALC_ENTRY_POINT,
-        ignore_paths=('_aiidasubmit.sh', 'file*txt')
+        ignore_paths=('_aiidasubmit.sh', 'file*txt'),
+        _disable_mpi=True,
     )
 
     inputs = generate_diff_inputs()
@@ -229,5 +231,9 @@ def test_with_mpi(mock_code_factory, generate_diff_inputs, mock_disable_mpi_forc
     res, node = run_get_node(CalculationFactory(CALC_ENTRY_POINT), code=mock_code, **inputs)
     assert node.exit_status == 0, f"diff calculation failed with exit status {node.exit_status}"
     assert node.is_finished_ok
-    assert node.get_option('withmpi') is False
     check_diff_output(res)
+
+    # check that the submit script does not contain mpirun
+    job_tmpl = json.loads(node.base.repository.get_object_content('.aiida/job_tmpl.json'))
+    assert not job_tmpl['codes_info'][0]['prepend_cmdline_params']
+    assert 'mpirun' not in node.base.repository.get_object_content('_aiidasubmit.sh')

@@ -26,7 +26,6 @@ __all__ = (
     "mock_regenerate_test_data",
     "mock_fail_on_missing",
     "mock_disable_mpi",
-    "mock_disable_mpi_force",
     "testing_config",
     "mock_code_factory",
 )
@@ -79,42 +78,13 @@ def mock_fail_on_missing(request):
     return request.config.getoption("--mock-fail-on-missing")
 
 
-def _mock_get_option(self, name: str):
-    """
-    Return the value of an option that was set for this CalcJobNode
-
-    Always return `False` if option is `withmpi`.
-
-    :param name: the option name
-    :return: the option value or None
-    :raises: ValueError for unknown option
-    """
-    if name == 'withmpi':
-        return False
-    return self.base.attributes.get(name, None)
-
-
 @pytest.fixture(scope='function')
-def mock_disable_mpi(request, monkeypatch):
+def mock_disable_mpi(request):
     """Enforce `withmpi=False` based on `--mock-disable-mpi` cli option.
 
     This is achieved by monkey-patching the `CalcJob.get_option()` method.
     """
-    if not request.config.getoption("--mock-disable-mpi"):
-        return
-
-    from aiida.orm import CalcJobNode  # pylint: disable=import-outside-toplevel
-    monkeypatch.setattr(CalcJobNode, 'get_option', _mock_get_option)
-
-
-@pytest.fixture(scope='function')
-def mock_disable_mpi_force(monkeypatch):
-    """Enforce `withmpi=False` independent of `--mock-disable-mpi` cli option.
-
-    Mostly required to test the functionality.
-    """
-    from aiida.orm import CalcJobNode  # pylint: disable=import-outside-toplevel
-    monkeypatch.setattr(CalcJobNode, 'get_option', _mock_get_option)
+    return request.config.getoption("--mock-disable-mpi")
 
 
 @pytest.fixture(scope='session')
@@ -135,10 +105,20 @@ def testing_config(testing_config_action):  # pylint: disable=redefined-outer-na
         config.to_file()
 
 
+def _forget_mpi_decorator(func):
+    """Modify :py:meth:`aiida.orm.Code.get_prepend_cmdline_params` to discard MPI parameters."""
+
+    def _get_prepend_cmdline_params(self, mpi_args=None, extra_mpirun_params=None):  # pylint: disable=unused-argument
+        return func(self)
+
+    return _get_prepend_cmdline_params
+
+
 @pytest.fixture(scope='function')
 def mock_code_factory(
     aiida_localhost, testing_config, testing_config_action, mock_regenerate_test_data,
-    mock_fail_on_missing, mock_disable_mpi, request: pytest.FixtureRequest, tmp_path: pathlib.Path
+    mock_fail_on_missing, mock_disable_mpi, monkeypatch, request: pytest.FixtureRequest,
+    tmp_path: pathlib.Path
 ):  # pylint: disable=too-many-arguments,redefined-outer-name,unused-argument
     """
     Fixture to create a mock AiiDA Code.
@@ -163,6 +143,7 @@ def mock_code_factory(
         _config_action: str = testing_config_action,
         _regenerate_test_data: bool = mock_regenerate_test_data,
         _fail_on_missing: bool = mock_fail_on_missing,
+        _disable_mpi: bool = mock_disable_mpi,
     ):  # pylint: disable=too-many-arguments,too-many-branches,too-many-locals
         """
         Creates a mock AiiDA code. If the same inputs have been run previously,
@@ -283,6 +264,14 @@ def mock_code_factory(
         code.set_prepend_text(variables.to_env())
 
         code.store()
+
+        # monkeypatch MPI behavior of code class
+        if _disable_mpi:
+            monkeypatch.setattr(
+                code.__class__, 'get_prepend_cmdline_params',
+                _forget_mpi_decorator(code.__class__.get_prepend_cmdline_params)
+            )
+
         return code
 
     yield _get_mock_code
