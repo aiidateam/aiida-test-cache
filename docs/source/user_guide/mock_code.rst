@@ -81,7 +81,7 @@ The next time, it will recognise the inputs and directly use the outputs cached 
 Running continuous integration (CI) tests on your repository:
 
  - Don't forget to commit changes to your data directory to make the cache available on CI
- - Run tests on CI with ``pytest --mock-fail-on-missing`` so that it fails when the committed cache is incomplete
+ - Run tests on CI with ``pytest --mock-fail-on-missing`` to force a test failure when it fails when the committed cache is incomplete
 
 Since the ``.aiida-testing-config.yml`` file is usually specific to your machine, there is no need to commit it.
 As long as the test cache is complete, tests will run fine without it, and if other developers need to change test inputs, they can easily regenerate a template for it using ``pytest --testing-config-action=generate``.

@@ -57,6 +57,7 @@ pre_commit = [
     "pre-commit",
     "pylint~=2.12.2",
     "mypy==0.930",
+    "types-setuptools==65.7.0.3",
     "types-PyYAML",
 ]
 dev = [
