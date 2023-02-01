@@ -8,9 +8,11 @@ import os
 import json
 import tempfile
 from pathlib import Path
+from pkg_resources import parse_version
 
 import pytest
 
+from aiida import __version__ as aiida_version
 from aiida.engine import run_get_node
 from aiida.plugins import CalculationFactory
 
@@ -211,11 +213,14 @@ def test_regenerate_test_data_executable(mock_code_factory, generate_diff_inputs
     assert (datadir / 'file1.txt').is_file()
 
 
-def test_with_mpi(mock_code_factory, generate_diff_inputs):  # pylint: disable=unused-argument
+@pytest.mark.skipif(
+    parse_version(aiida_version) < parse_version('2.1.0'), reason='requires AiiDA v2.1.0+'
+)
+def test_disable_mpi(mock_code_factory, generate_diff_inputs):  # pylint: disable=unused-argument
     """
     Check that disabling MPI is respected.
 
-    Let a CalcJob explicitly request MPI and check it is still run without MPI.
+    Let a CalcJob explicitly request `withmpi=True`, and check it is still run without MPI.
     """
     mock_code = mock_code_factory(
         label='diff',

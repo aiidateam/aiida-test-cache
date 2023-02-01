@@ -10,11 +10,13 @@ import typing as ty
 import warnings
 import collections
 import os
+from pkg_resources import parse_version
 
 import click
 import pytest
 
 from aiida.orm import Code
+from aiida import __version__ as aiida_version
 
 from ._env_keys import MockVariables
 from ._hasher import InputHasher
@@ -119,13 +121,12 @@ def mock_code_factory(
     aiida_localhost, testing_config, testing_config_action, mock_regenerate_test_data,
     mock_fail_on_missing, mock_disable_mpi, monkeypatch, request: pytest.FixtureRequest,
     tmp_path: pathlib.Path
-):  # pylint: disable=too-many-arguments,redefined-outer-name,unused-argument
+):  # pylint: disable=too-many-arguments,redefined-outer-name,unused-argument,too-many-statements
     """
     Fixture to create a mock AiiDA Code.
 
     testing_config_action :
         Read config file if present ('read'), require config file ('require') or generate new config file ('generate').
-
 
     """
     log_file = tmp_path.joinpath("_aiida_mock_code.log")
@@ -265,12 +266,22 @@ def mock_code_factory(
 
         code.store()
 
-        # monkeypatch MPI behavior of code class
-        if _disable_mpi:
-            monkeypatch.setattr(
-                code.__class__, 'get_prepend_cmdline_params',
-                _forget_mpi_decorator(code.__class__.get_prepend_cmdline_params)
-            )
+        # Monkeypatch MPI behavior of code class, if requested either directly via `--mock-disable-mpi` or
+        # indirectly via `--mock-fail-on-missing` (no need to use MPI in this case)
+        if _disable_mpi or _fail_on_missing:
+            is_mpi_disable_supported = parse_version(aiida_version) >= parse_version('2.1.0')
+
+            if not is_mpi_disable_supported:
+                if _disable_mpi:
+                    raise ValueError(
+                        "Upgrade to AiiDA >= 2.1.0 in order to use `--mock-disable-mpi`"
+                    )
+                # if only _fail_on_missing, we silently do not disable MPI
+            else:
+                monkeypatch.setattr(
+                    code.__class__, 'get_prepend_cmdline_params',
+                    _forget_mpi_decorator(code.__class__.get_prepend_cmdline_params)
+                )
 
         return code
 

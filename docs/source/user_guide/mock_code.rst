@@ -45,6 +45,7 @@ Second, we need to tell the mock executable where to find the *actual* ``diff`` 
       # code-label: absolute path
       diff: /usr/bin/diff
 
+
 .. note::
    Why yet another configuration file?
 
@@ -77,10 +78,13 @@ The next time, it will recognise the inputs and directly use the outputs cached 
     It does *not* rely on the hashing mechanism of AiiDA.
 
 
-Don't forget to add your data directory to your test data in order to make them available in CI and to other users of your plugin!
+Running continuous integration (CI) tests on your repository:
 
-Since the ``.aiida-testing-config.yml`` is usually specific to your machine, it usually better not to commit it.
-Tests will run fine without it, and if other developers need to change test inputs, they can easily regenerate a template for it using ``pytest --testing-config-action=generate``.
+ - Don't forget to commit changes to your data directory to make the cache available on CI
+ - Run tests on CI with ``pytest --mock-fail-on-missing`` so that it fails when the committed cache is incomplete
+
+Since the ``.aiida-testing-config.yml`` file is usually specific to your machine, there is no need to commit it.
+As long as the test cache is complete, tests will run fine without it, and if other developers need to change test inputs, they can easily regenerate a template for it using ``pytest --testing-config-action=generate``.
 
 For further documentation on the pytest commandline options added by mock code, see:
 
@@ -96,6 +100,9 @@ For further documentation on the pytest commandline options added by mock code, 
       --mock-regenerate-test-data
                             Regenerate test data.
 
+      --mock-fail-on-missing
+                            Fail if cached data is not found, rather than regenerating it.
+      --mock-disable-mpi    Run all calculations with `metadata.options.usempi=False`.
 
 Limitations
 -----------
