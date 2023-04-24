@@ -13,6 +13,11 @@ import typing as ty
 
 import pytest
 
+try:
+    from pytest import Parser
+except ImportError:
+    from _pytest.config.argparsing import Parser
+
 from aiida import plugins
 from aiida.common.links import LinkType
 from aiida.orm import Code, Dict, SinglefileData, List, FolderData, RemoteData, StructureData
@@ -29,7 +34,7 @@ __all__ = (
 )
 
 
-def pytest_addoption(parser: pytest.Parser) -> None:
+def pytest_addoption(parser: Parser) -> None:
     """Add pytest command line options."""
     parser.addoption(
         "--archive-cache-forbid-migration",
