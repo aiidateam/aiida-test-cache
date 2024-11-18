@@ -2,9 +2,9 @@
 Using :mod:`.archive_cache`
 ===========================
 
-:mod:`.archive_cache` provides the :py:func:`~aiida_testing.archive_cache.enable_archive_cache` pytest fixture. It uses the AiiDA caching mechanisms to enable end-to-end tests of high-level workchains without executing individual `Calcjob` processes, if they can be cached from a stored archive.
+:mod:`.archive_cache` provides the :py:func:`~aiida_test_cache.archive_cache.enable_archive_cache` pytest fixture. It uses the AiiDA caching mechanisms to enable end-to-end tests of high-level workchains without executing individual `Calcjob` processes, if they can be cached from a stored archive.
 
-Here an example of using the :py:func:`~aiida_testing.archive_cache.enable_archive_cache` fixture to test a simple workchain using the ``diff`` code
+Here an example of using the :py:func:`~aiida_test_cache.archive_cache.enable_archive_cache` fixture to test a simple workchain using the ``diff`` code
 
 The workchain looks as follows
 
@@ -90,14 +90,14 @@ be ignored when computing the hash of this calcjob.
 
 .. note::
     The file location of the archives used for these regression tests can be specified as the first argument to the
-    :py:func:`~aiida_testing.archive_cache.enable_archive_cache` and can either be an absolute or relative file path
+    :py:func:`~aiida_test_cache.archive_cache.enable_archive_cache` and can either be an absolute or relative file path
     for an AiiDA archive file
 
     If the path is absolute it will be used directly. A relative path is interpreted with respect to either the
     ``default_data_dir`` option in the config file, or if this option isn't specified a folder named ``caches`` in
     the same directory as the test file in question
 
-    So in the default case providing just the name of the archive to :py:func:`~aiida_testing.archive_cache.enable_archive_cache`
+    So in the default case providing just the name of the archive to :py:func:`~aiida_test_cache.archive_cache.enable_archive_cache`
     will create an archive with the given name in the ``caches`` subfolder
 
 

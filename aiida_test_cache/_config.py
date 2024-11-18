@@ -24,7 +24,7 @@ class ConfigActions(Enum):
 
 
 class Config(collections.abc.MutableMapping):
-    """Configuration of aiida-testing package."""
+    """Configuration of aiida-test-cache package."""
 
     schema = Schema({
         'mock_code': Schema({str: str}),

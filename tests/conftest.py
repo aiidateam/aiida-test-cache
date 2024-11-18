@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-Configuration file for pytest tests of aiida-testing.
+Configuration file for pytest tests of aiida-test-cache.
 """
 import pytest
 

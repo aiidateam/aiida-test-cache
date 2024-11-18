@@ -59,7 +59,7 @@ class InputHasher:
         """
         aiidasubmit_content = content.decode()
         lines: ty.Iterable[str] = aiidasubmit_content.splitlines()
-        # Strip lines containing the aiida_testing.mock_code environment variables.
+        # Strip lines containing the aiida_test_cache.mock_code environment variables.
         lines = (line for line in lines if 'export AIIDA_MOCK' not in line)
         # Remove abspath of the aiida-mock-code, but keep cmdline arguments.
         lines = (line.split("aiida-mock-code'")[-1] for line in lines)

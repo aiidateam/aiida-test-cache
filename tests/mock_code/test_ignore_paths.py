@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Test that ignoring paths works as expected.
 """
@@ -6,7 +5,7 @@ import os
 from pathlib import Path
 import pytest
 
-from aiida_testing.mock_code._cli import copy_files
+from aiida_test_cache.mock_code._cli import copy_files
 
 OUTPUT_PATHS = (
     Path('file1.txt'),

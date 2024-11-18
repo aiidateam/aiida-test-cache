@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Defines fixtures for mocking AiiDA codes, with caching at the level of
 the executable.
@@ -7,7 +6,7 @@ the executable.
 from ._hasher import InputHasher
 from ._fixtures import *
 
-# Note: This is necessary for the sphinx doc - otherwise it does not find aiida_testing.mock_code.mock_code_factory
+# Note: This is necessary for the sphinx doc - otherwise it does not find aiida_test_cache.mock_code.mock_code_factory
 __all__ = (
     "pytest_addoption",
     "testing_config_action",

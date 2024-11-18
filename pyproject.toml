@@ -3,10 +3,10 @@ requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
 
 [tool.flit.module]
-name = "aiida_testing"
+name = "aiida_test_cache"
 
 [project]
-name = "aiida-testing"
+name = "aiida-test-cache"
 dynamic = ["version", "description"]
 authors = [
     {name = "Dominik Gresch"},
@@ -39,7 +39,7 @@ keywords = [
     "mock",
     "cache",
 ]
-urls = {Homepage = "https://aiida-testing.readthedocs.io/"}
+urls = {Homepage = "https://aiida-test-cache.readthedocs.io/"}
 requires-python = ">=3.7"
 # Note the dependency on setuptools due to pkg_resources
 dependencies = [
@@ -51,7 +51,7 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = ["sphinx", "sphinx-rtd-theme"]
-testing = [
+tests = [
     "pgtest~=1.3.1",
     "aiida-diff",
     "pytest-datadir",
@@ -65,15 +65,15 @@ pre_commit = [
     "types-PyYAML",
 ]
 dev = [
-    'aiida-testing[testing,pre_commit,docs]',
+    'aiida-test-cache[tests,pre_commit,docs]',
 ]
 
 [project.scripts]
-aiida-mock-code = "aiida_testing.mock_code._cli:run"
+aiida-mock-code = "aiida_test_cache.mock_code._cli:run"
 
 [project.entry-points."pytest11"]
-aiida_mock_code = "aiida_testing.mock_code"
-aiida_archive_cache = "aiida_testing.archive_cache"
+aiida_mock_code = "aiida_test_cache.mock_code"
+aiida_archive_cache = "aiida_test_cache.archive_cache"
 
 [tool.pylint.format]
 max-line-length = 120
@@ -122,7 +122,7 @@ envlist = py38
 usedevelop = true
 
 [testenv:py{37,38,39,310,311}]
-extras = testing
+extras = tests
 commands = pytest {posargs}
 
 [testenv:pre-commit-py{38,39,310,311}]

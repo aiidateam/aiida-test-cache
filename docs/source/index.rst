@@ -2,8 +2,8 @@
     :width: 250px
     :align: center
 
-The aiida-testing pytest plugin
-===============================
+The aiida-test-cache pytest plugin
+==================================
 
 A pytest plugin to simplify testing of `AiiDA`_ plugins. It implements
 fixtures to cache the execution of codes:
@@ -15,7 +15,7 @@ fixtures to cache the execution of codes:
   an automatic archive creation/loading. Use this to test high-level
   workflows.
 
-``aiida-testing`` is available at http://github.com/aiidateam/aiida-testing
+``aiida-test-cache`` is available at http://github.com/aiidateam/aiida-test-cache
 
 
 .. toctree::
@@ -23,7 +23,7 @@ fixtures to cache the execution of codes:
 
    user_guide/index
    developer_guide/index
-   API documentation <apidoc/aiida_testing>
+   API documentation <apidoc/aiida_test_cache>
 
 If you use `AiiDA`_ for your research, please cite the following work:
 
@@ -32,7 +32,7 @@ If you use `AiiDA`_ for your research, please cite the following work:
   for computational science*, Comp. Mat. Sci 111, 218-230 (2016);
   https://doi.org/10.1016/j.commatsci.2015.09.013; http://www.aiida.net.
 
-``aiida-testing`` is released under the Apache license.
+``aiida-test-cache`` is released under the MIT license.
 
 
 

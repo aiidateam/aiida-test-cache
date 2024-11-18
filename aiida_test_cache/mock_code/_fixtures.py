@@ -214,7 +214,7 @@ def mock_code_factory(
         if not mock_executable_path:
             raise ValueError(
                 "'aiida-mock-code' executable not found in the PATH. " +
-                "Have you run `pip install aiida-testing` in this python environment?"
+                "Have you run `pip install aiida-test-cache` in this python environment?"
             )
 
         # try determine path to actual code executable

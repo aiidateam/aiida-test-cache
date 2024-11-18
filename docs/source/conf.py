@@ -1,4 +1,4 @@
-# Sphinx configuration for aiida-testing
+# Sphinx configuration for aiida-test-cache
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -14,7 +14,7 @@ import sys
 import time
 import contextlib
 
-import aiida_testing
+import aiida_test_cache
 # -- AiiDA-related setup --------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -62,7 +62,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'aiida-testing'
+project = 'aiida-test-cache'
 copyright_first_year = "2019"
 copyright_owners = "The AiiDA Team"
 
@@ -76,7 +76,7 @@ copyright = f'{copyright_year_string}, {copyright_owners}. All rights reserved'
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = aiida_testing.__version__
+release = aiida_test_cache.__version__
 # The short X.Y version.
 version = '.'.join(release.split('.')[:2])
 
@@ -199,7 +199,7 @@ html_show_sourcelink = False
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the
 # base URL from which the finished HTML is served.
-html_use_opensearch = 'http://aiida-testing.readthedocs.io'
+html_use_opensearch = 'http://aiida-test-cache.readthedocs.io'
 
 # This is the file name suffix for HTML files (e.g. ".xhtml").
 #html_file_suffix = None
@@ -216,7 +216,7 @@ html_search_language = 'en'
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'aiida-testing-doc'
+htmlhelp_basename = 'aiida-test-cache-doc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -271,7 +271,7 @@ def run_apidoc(_):
     """
     source_dir = os.path.abspath(os.path.dirname(__file__))
     apidoc_dir = os.path.join(source_dir, 'apidoc')
-    package_dir = os.path.join(source_dir, os.pardir, os.pardir, 'aiida_testing')
+    package_dir = os.path.join(source_dir, os.pardir, os.pardir, 'aiida_test_cache')
 
     import subprocess
     cmd_path = 'sphinx-apidoc'
@@ -388,5 +388,5 @@ nitpick_ignore = [
     ('py:obj', 'float'),
     ('py:obj', 'bool'),
     ('py:obj', 'Mapping'),
-    ('py:class', 'aiida_testing._config.Config'),
+    ('py:class', 'aiida_test_cache._config.Config'),
 ]

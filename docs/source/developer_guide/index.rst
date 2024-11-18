@@ -6,11 +6,11 @@ Full setup
 ++++++++++
 
 The following commands give you a complete development setup for
-``aiida-testing``.
+``aiida-test-cache``.
 Make sure to run this in the appropriate virtual environment::
 
-    git clone https://github.com/aiidateam/aiida-testing.git
-    cd aiida-testing
+    git clone https://github.com/aiidateam/aiida-test-cache.git
+    cd aiida-test-cache
     pip install -e .[dev]
     pre-commit install
 
@@ -22,7 +22,7 @@ Running the tests
 
 The following will discover and run all unit tests::
 
-    pip install -e .[testing]
+    pip install -e .[tests]
     pytest
 
 Automatic coding style checks
@@ -46,7 +46,7 @@ If you ever need to skip these pre-commit hooks, just use::
 Continuous integration
 ++++++++++++++++++++++
 
-``aiida-testing`` comes with a ``ci.yml`` file for continuous integration tests on every commit using GitHub Actions. It will:
+``aiida-test-cache`` comes with a ``ci.yml`` file for continuous integration tests on every commit using GitHub Actions. It will:
 
 #. run all tests
 #. build the documentation
@@ -55,9 +55,9 @@ Continuous integration
 Online documentation
 ++++++++++++++++++++
 
-The documentation of ``aiida-testing`` is continuously being built on
+The documentation of ``aiida-test-cache`` is continuously being built on
 `ReadTheDocs <https://readthedocs.org/>`_, and the result is shown on
-https://aiida-testing.readthedocs.org/.
+https://aiida-test-cache.readthedocs.org/.
 
 If you have a ReadTheDocs account, you can also enable it on your own
 fork for testing, but you will have to use a different name.

@@ -6,7 +6,7 @@ Using :mod:`.mock_code`
 
  1. A command-line script ``aiida-mock-code`` (the *mock executable*) that is executed instead of the *actual* executable and acts as a *cache* for the outputs of the actual executable
 
- 2. A pytest fixture :py:func:`~aiida_testing.mock_code.mock_code_factory` that sets up an AiiDA Code pointing to the mock executable
+ 2. A pytest fixture :py:func:`~aiida_test_cache.mock_code.mock_code_factory` that sets up an AiiDA Code pointing to the mock executable
 
 In the following, we will set up a mock code for the ``diff`` executable in three simple steps.
 
@@ -32,7 +32,7 @@ First, we want to define a fixture for our mocked code in the ``conftest.py``:
             # files *not* to copy into the data directory
             ignore_files=('_aiidasubmit.sh', 'file*')
         )
-        
+
 Second, we need to tell the mock executable where to find the *actual* ``diff`` executable by creating a ``.aiida-testing-config.yml`` file in the top level of our plugin.
 
 .. note::

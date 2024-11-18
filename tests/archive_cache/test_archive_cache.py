@@ -15,7 +15,7 @@ from aiida.orm import Node
 from aiida.orm.querybuilder import QueryBuilder
 from aiida.plugins import CalculationFactory
 
-from aiida_testing.archive_cache._utils import create_node_archive, load_node_archive
+from aiida_test_cache.archive_cache._utils import create_node_archive, load_node_archive
 
 CALC_ENTRY_POINT = 'diff'
 

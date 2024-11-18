@@ -71,7 +71,7 @@ def test_custom_hasher(pytester: pytest.Pytester):
     pytester.makepyfile(
         """
         from aiida.engine import run_get_node
-        from aiida_testing.mock_code import InputHasher
+        from aiida_test_cache.mock_code import InputHasher
         class CustomHasher(InputHasher):
             def modify_content(self, path, content):
                 if path.name == 'file1.txt':
