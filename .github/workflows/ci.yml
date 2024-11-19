@@ -1,6 +1,10 @@
 name: CI
 
-on: [push, pull_request]
+on:
+    push:
+        branches:
+            - main
+    pull_request:
 env:
     UV_VER: "0.5.2"
     FORCE_COLOR: 1
