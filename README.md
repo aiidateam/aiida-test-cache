@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/aiidateam/aiida-test-cache/workflows/ci/badge.svg)](https://github.com/aiidateam/aiida-test-cache/actions)
+[![Build Status](https://github.com/aiidateam/aiida-test-cache/actions/workflows/ci.yml/badge.svg)](https://github.com/aiidateam/aiida-test-cache/actions)
 [![Docs status](https://readthedocs.org/projects/aiida-test-cache/badge)](https://aiida-test-cache.readthedocs.io/)
 [![PyPI version](https://badge.fury.io/py/aiida-test-cache.svg)](https://badge.fury.io/py/aiida-test-cache)
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/aiidateam/aiida-test-cache/blob/main/LICENSE)
