@@ -85,7 +85,12 @@ disable = [
 ]
 
 [tool.pytest.ini_options]
-filterwarnings = []
+addopts = '--durations-min=3 --strict-config --strict-markers -ra'
+filterwarnings = [
+    'ignore:Creating AiiDA configuration:UserWarning:aiida',
+    # The following deprecation warnings come from Python 3.12 stdlib modules
+    "ignore:datetime.datetime.:DeprecationWarning:",
+]
 
 [tool.yapf]
 based_on_style = "pep8"

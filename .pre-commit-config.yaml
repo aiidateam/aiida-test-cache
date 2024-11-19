@@ -11,13 +11,6 @@ repos:
 - repo: local
   hooks:
 
-  - id: pylint
-    name: pylint
-    entry: pylint
-    types: [file, python]
-    language: system
-    exclude: '^(docs/)|(examples/)'
-
   -  id: mypy
      name: mypy
      entry: mypy
