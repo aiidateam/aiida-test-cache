@@ -58,26 +58,6 @@ jobs:
         aiida-mock-code || true
         cd tests; pytest
 
-  docs:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: ${{ env.UV_VER }}
-    - name: Install package
-      run: uv pip install --system -e .[docs]
-
-    - name: Build docs
-      run: cd docs && make
-
   pre-commit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
