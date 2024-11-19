@@ -40,7 +40,7 @@ keywords = [
     "mock",
     "cache",
 ]
-urls = {Homepage = "https://aiida-test-cache.readthedocs.io/"}
+urls = {Homepage = "https://aiida-testing.readthedocs.io/"}
 requires-python = ">=3.7"
 # Note the dependency on setuptools due to pkg_resources
 dependencies = [

@@ -2,10 +2,10 @@
     :width: 250px
     :align: center
 
-The aiida-test-cache pytest plugin
+aiida-test-cache pytest plugin
 ==================================
 
-A pytest plugin to simplify testing of `AiiDA`_ plugins. It implements
+A pytest plugin to simplify testing of `AiiDA`_ workflows. It implements
 fixtures to cache the execution of codes:
 
 * :mod:`.mock_code`: Caches at the level of the code executable. Use this for
