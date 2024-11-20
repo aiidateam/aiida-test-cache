@@ -91,7 +91,7 @@ def mock_disable_mpi(request):
 
 @pytest.fixture(scope='session')
 def testing_config(testing_config_action):  # pylint: disable=redefined-outer-name
-    """Get content of .aiida-testing-config.yml
+    """Get content of .aiida-test-cache-config.yml
 
     testing_config_action :
         Read config file if present ('read'), require config file ('require') or generate new config file ('generate').
@@ -227,7 +227,7 @@ def mock_code_factory(
         code_executable_path = mock_code_config.get(label, '')
         if label in mock_code_config and not pathlib.Path(mock_code_config[label]).is_absolute():
             # Relative paths are interpreted with respect to the
-            # aiida-testing-config.yml file
+            # .aiida-testing-config.yml file
             relative_path = _config.file_path.parent / mock_code_config[label]
             code_executable_path = os.fspath(relative_path)
             if not relative_path.exists():

@@ -70,7 +70,7 @@ If the archive does not exist the, workchain will try to run the complete calcul
     By default, the test archives are migrated to match the installed AiiDA version.
 
 
-The following options can be specified in the ``aiida-testing-config.yml`` file. All of the below options are optional and do not need to be modified in order to use
+The following options can be specified in the ``.aiida-testing-config.yml`` file. All of the below options are optional and do not need to be modified in order to use
 the archive cache functionalities
 
 .. code-block:: yaml

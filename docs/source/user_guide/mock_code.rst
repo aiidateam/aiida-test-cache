@@ -33,7 +33,7 @@ First, we want to define a fixture for our mocked code in the ``conftest.py``:
             ignore_files=('_aiidasubmit.sh', 'file*')
         )
 
-Second, we need to tell the mock executable where to find the *actual* ``diff`` executable by creating a ``.aiida-testing-config.yml`` file in the top level of our plugin.
+Second, we need to tell the mock executable where to find the *actual* ``diff`` executable by creating a ``.aiida-test-cache-config.yml`` file in the top level of our plugin.
 
 .. note::
     This step is needed **only** when we want to use the actual executable to (re)generate test data.
@@ -83,7 +83,7 @@ Running continuous integration (CI) tests on your repository:
  - Don't forget to commit changes to your data directory to make the cache available on CI
  - Run tests on CI with ``pytest --mock-fail-on-missing`` to force a test failure when it fails when the committed cache is incomplete
 
-Since the ``.aiida-testing-config.yml`` file is usually specific to your machine, there is no need to commit it.
+Since the ``.aiida-test-cache-config.yml`` file is usually specific to your machine, there is no need to commit it.
 As long as the test cache is complete, tests will run fine without it, and if other developers need to change test inputs, they can easily regenerate a template for it using ``pytest --testing-config-action=generate``.
 
 For further documentation on the pytest commandline options added by mock code, see:
@@ -94,7 +94,7 @@ For further documentation on the pytest commandline options added by mock code, 
     ...
     custom options:
       --testing-config-action=TESTING_CONFIG_ACTION
-                            Read .aiida-testing-config.yml config file if present
+                            Read .aiida-test-cache-config.yml config file if present
                             ('read'), require config file ('require') or generate
                             new config file ('generate').
       --mock-regenerate-test-data

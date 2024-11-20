@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Helpers for managing the ``.aiida-testing-config.yml`` configuration file.
+Helpers for managing the ``.aiida-test-cache-config.yml`` configuration file.
 """
 
 import pathlib
@@ -11,7 +11,7 @@ from voluptuous import Schema
 
 import yaml
 
-CONFIG_FILE_NAME = '.aiida-testing-config.yml'
+CONFIG_FILE_NAME = '.aiida-test-cache-config.yml'
 
 
 class ConfigActions(Enum):
@@ -50,7 +50,7 @@ class Config(collections.abc.MutableMapping):
     @classmethod
     def from_file(cls) -> 'Config':
         """
-        Parses the configuration file ``.aiida-testing-config.yml``.
+        Parses the configuration file ``.aiida-test-cache-config.yml``.
 
         The file is searched in the current working directory and all its parent
         directories.
