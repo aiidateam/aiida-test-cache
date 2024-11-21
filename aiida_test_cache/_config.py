@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
 """
 Helpers for managing the ``.aiida-test-cache-config.yml`` configuration file.
 """
 
+import collections
 import pathlib
 import typing as ty
-import collections
 from enum import Enum
-from voluptuous import Schema
 
 import yaml
+from voluptuous import Schema
 
 CONFIG_FILE_NAME = '.aiida-test-cache-config.yml'
 

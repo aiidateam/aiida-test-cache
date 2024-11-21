@@ -9,12 +9,13 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import contextlib
 import os
 import sys
 import time
-import contextlib
 
 import aiida_test_cache
+
 # -- AiiDA-related setup --------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -28,7 +29,6 @@ if on_rtd:  # let RTD set the theme
     pass
 else:
     with contextlib.suppress(ImportError):
-        import sphinx_rtd_theme
         html_theme = 'sphinx_rtd_theme'
 
 # -- General configuration ------------------------------------------------
@@ -68,8 +68,7 @@ copyright_owners = "The AiiDA Team"
 
 current_year = str(time.localtime().tm_year)
 copyright_year_string = current_year if current_year == copyright_first_year else f"{copyright_first_year}-{current_year}"
-# pylint: disable=redefined-builtin
-copyright = f'{copyright_year_string}, {copyright_owners}. All rights reserved'
+copyright = f'{copyright_year_string}, {copyright_owners}. All rights reserved'  # noqa: A001
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -292,7 +291,7 @@ def run_apidoc(_):
     env = os.environ.copy()
     env["SPHINX_APIDOC_OPTIONS"
         ] = 'members,special-members,private-members,undoc-members,show-inheritance'
-    subprocess.check_call([cmd_path] + options, env=env)
+    subprocess.check_call([cmd_path, *options], env=env)
 
 
 def setup(app):

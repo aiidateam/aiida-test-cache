@@ -1,16 +1,15 @@
 """
 Defines helper functions for the archive_cache pytest fixtures
 """
-import typing as ty
-from functools import partial
+import os
 import pathlib
 import tempfile
-import os
+import typing as ty
+from functools import partial
 
 import pytest
-
-from aiida.orm import ProcessNode, QueryBuilder, Node
 from aiida.cmdline.utils.echo import echo_warning
+from aiida.orm import Node, ProcessNode, QueryBuilder
 
 __all__ = ('rehash_processes', 'monkeypatch_hash_objects')
 
@@ -82,8 +81,7 @@ def get_node_from_hash_objects_caller(caller: ty.Any) -> Node:
 
 #Cross-compatible importing function for import AiiDA archives in 1.X and 2.X
 try:
-    from aiida.tools.archive import create_archive
-    from aiida.tools.archive import import_archive
+    from aiida.tools.archive import create_archive, import_archive
     import_archive = partial(import_archive, merge_extras=('n', 'c', 'u'), import_new_extras=True)
 
     def import_with_migrate(
@@ -97,8 +95,8 @@ try:
         try to migrate the archive if --archive-cache-forbid-migration option is not specified
         """
         #pylint: disable=import-outside-toplevel
-        from aiida.tools.archive import get_format
         from aiida.common.exceptions import IncompatibleStorageSchema
+        from aiida.tools.archive import get_format
 
         try:
             import_archive(archive_path, *args, **kwargs)
@@ -115,7 +113,9 @@ try:
                 raise
 
 except ImportError:
-    from aiida.tools.importexport import export as create_archive  # type: ignore[import-not-found,no-redef]
+    from aiida.tools.importexport import (
+        export as create_archive,  # type: ignore[import-not-found,no-redef]
+    )
     from aiida.tools.importexport import import_data as import_archive  # type: ignore[no-redef]
     import_archive = partial(
         import_archive, extras_mode_existing='ncu', extras_mode_new='import'
@@ -132,10 +132,15 @@ except ImportError:
         try to migrate the archive if --archive-cache-forbid-migration option is not specified
         """
         #pylint: disable=import-outside-toplevel
-        from aiida.tools.importexport import EXPORT_VERSION, IncompatibleArchiveVersionError
         # these are only availbale after aiida >= 1.5.0, maybe rely on verdi import instead
-        from aiida.tools.importexport import detect_archive_type
-        from aiida.tools.importexport.archive.migrators import get_migrator  # type: ignore[import-not-found]
+        from aiida.tools.importexport import (
+            EXPORT_VERSION,
+            IncompatibleArchiveVersionError,
+            detect_archive_type,
+        )
+        from aiida.tools.importexport.archive.migrators import (
+            get_migrator,  # type: ignore[import-not-found]
+        )
 
         try:
             import_archive(archive_path, *args, **kwargs)

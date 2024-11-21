@@ -1,9 +1,9 @@
 """Hashing of input files."""
 import hashlib
-from importlib.util import spec_from_file_location, module_from_spec
 import inspect
-from pathlib import Path
 import typing as ty
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
 
 if ty.TYPE_CHECKING:
     from ._env_keys import MockVariables  # pylint: disable=unused-import
@@ -44,7 +44,7 @@ class InputHasher:
 
         return md5sum.hexdigest()
 
-    def modify_content(self, path: Path, content: bytes) -> ty.Optional[bytes]:  # pylint: disable=unused-argument
+    def modify_content(self, _path: Path, content: bytes) -> ty.Optional[bytes]:
         """A sub-class hook to modify the contents of the file, before hashing.
 
         If None is returned, the file is ignored, when generating the hash.

@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 """
 Defines fixtures for automatically creating / loading an AiiDA DB export,
 to enable AiiDA - level caching.
 """
+# ruff: noqa: F403, F405
 
 from ._fixtures import *
 

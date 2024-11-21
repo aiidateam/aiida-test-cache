@@ -1,26 +1,24 @@
-# -*- coding: utf-8 -*-
 """
 Defines a pytest fixture for creating mock AiiDA codes.
 """
 
-import uuid
-import shutil
-import pathlib
-import typing as ty
-import warnings
 import collections
 import os
-from pkg_resources import parse_version
+import pathlib
+import shutil
+import typing as ty
+import uuid
+import warnings
 
 import click
 import pytest
-
-from aiida.orm import Code
 from aiida import __version__ as aiida_version
+from aiida.orm import Code
+from pkg_resources import parse_version
 
+from .._config import CONFIG_FILE_NAME, Config, ConfigActions
 from ._env_keys import MockVariables
 from ._hasher import InputHasher
-from .._config import Config, CONFIG_FILE_NAME, ConfigActions
 
 __all__ = (
     "pytest_addoption",
@@ -110,7 +108,7 @@ def testing_config(testing_config_action):  # pylint: disable=redefined-outer-na
 def _forget_mpi_decorator(func):
     """Modify :py:meth:`aiida.orm.Code.get_prepend_cmdline_params` to discard MPI parameters."""
 
-    def _get_prepend_cmdline_params(self, mpi_args=None, extra_mpirun_params=None):  # pylint: disable=unused-argument
+    def _get_prepend_cmdline_params(self, mpi_args=None, extra_mpirun_params=None):  # noqa: ARG001
         return func(self)
 
     return _get_prepend_cmdline_params
@@ -178,13 +176,14 @@ def mock_code_factory(
             If True, regenerate test data instead of reusing.
 
         .. deprecated:: 0.1.0
-            Keyword `ingore_files` is deprecated and will be removed in `v1.0`. Use `ignore_paths` instead.
+            Keyword `ignore_files` is deprecated and will be removed in `v1.0`. Use `ignore_paths` instead.
         """
         if ignore_files != ('_aiidasubmit.sh', ):
             warnings.warn(
                 'keyword `ignore_files` is deprecated and will be removed in `v1.0`. Use `ignore_paths` instead.',
-                DeprecationWarning
-            )  # pylint: disable=no-member
+                DeprecationWarning,
+                stacklevel=2
+            )
 
         # It's easy to forget the final comma and pass a string, e.g. `ignore_paths = ('_aiidasubmit.sh')`
         for arg in (ignore_paths, ignore_files):

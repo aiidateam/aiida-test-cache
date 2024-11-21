@@ -60,7 +60,6 @@ tests = [
 ]
 pre_commit = [
     "pre-commit",
-    "pylint~=3.3.1",
     "mypy==1.13",
     "types-setuptools==65.7.0.3",
     "types-PyYAML",
@@ -76,14 +75,6 @@ aiida-mock-code = "aiida_test_cache.mock_code._cli:run"
 aiida_mock_code = "aiida_test_cache.mock_code"
 aiida_archive_cache = "aiida_test_cache.archive_cache"
 
-[tool.pylint.format]
-max-line-length = 120
-
-[tool.pylint.messages_control]
-disable = [
-    "duplicate-code",
-]
-
 [tool.pytest.ini_options]
 filterwarnings = []
 
@@ -92,6 +83,32 @@ based_on_style = "pep8"
 coalesce_brackets = true
 dedent_closing_brackets = true
 column_limit = 100
+
+[tool.ruff]
+line-length = 120
+show-fixes = true
+
+[tool.ruff.lint]
+ignore = ["E501", "TRY003"]
+select = [
+  "A",    # flake8-builtins
+  "ARG",  # flake8-unused-arguments
+  "B",    # flake8-bugbear
+  "C4",   # flake8-comprehensions
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
+  "N",    # pep8-naming
+  "PLE",  # pylint error rules
+  "PLW",  # pylint warning rules
+  "PLC",  # pylint convention rules
+  "RUF",  # ruff-specific rules
+  "TRY",  # Tryceratops
+  "UP"    # pyupgrade
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/archive_cache/test_archive_cache.py" = ["ARG001"]
 
 [tool.mypy]
 show_error_codes = true

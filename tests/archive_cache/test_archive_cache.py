@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Test basic usage of the mock code on examples using aiida-diff.
 """
@@ -7,10 +6,7 @@ Test basic usage of the mock code on examples using aiida-diff.
 import os
 
 import pytest
-
-from aiida.engine import run_get_node
-from aiida.engine import WorkChain
-from aiida.engine import ToContext
+from aiida.engine import ToContext, WorkChain, run_get_node
 from aiida.orm import Node
 from aiida.orm.querybuilder import QueryBuilder
 from aiida.plugins import CalculationFactory
@@ -59,8 +55,8 @@ def check_diff_workchain_fixture():
 < 
 ---
 > Please report to the ministry of silly walks.
-"""
-    EXPECTED_HASH = '96535a026a714a51855ff788c6646badb7e35a4fb483526bf90474a9eaaa0847'
+"""  # noqa: N806
+    EXPECTED_HASH = '96535a026a714a51855ff788c6646badb7e35a4fb483526bf90474a9eaaa0847'  # noqa: N806
 
     def _check_diff_workchain(res, node, should_have_used_cache=True):
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Defines pytest fixtures for automatically enable caching in tests and create aiida archives if not existent.
 Meant to be useful for WorkChain tests.
@@ -7,21 +6,33 @@ Meant to be useful for WorkChain tests.
 
 import os
 import pathlib
-from contextlib import contextmanager
 import shutil
 import typing as ty
+from contextlib import contextmanager
 
 import pytest
-
 from aiida import plugins
 from aiida.common.links import LinkType
-from aiida.orm import Code, Dict, SinglefileData, List, FolderData, RemoteData, StructureData
-from aiida.orm import CalcJobNode, QueryBuilder
 from aiida.manage.caching import enable_caching
+from aiida.orm import (
+    CalcJobNode,
+    Code,
+    Dict,
+    FolderData,
+    List,
+    QueryBuilder,
+    RemoteData,
+    SinglefileData,
+    StructureData,
+)
 
-from ._utils import monkeypatch_hash_objects, get_node_from_hash_objects_caller
-from ._utils import load_node_archive, create_node_archive
 from .._config import Config
+from ._utils import (
+    create_node_archive,
+    get_node_from_hash_objects_caller,
+    load_node_archive,
+    monkeypatch_hash_objects,
+)
 
 __all__ = (
     "pytest_addoption", "absolute_archive_path", "enable_archive_cache", "liberal_hash",
@@ -146,7 +157,7 @@ def absolute_archive_path(
 
 @pytest.fixture(scope='function')
 def enable_archive_cache(
-    liberal_hash: None, archive_cache_forbid_migration: bool, archive_cache_overwrite: bool,
+    liberal_hash: None, archive_cache_forbid_migration: bool, archive_cache_overwrite: bool,  # noqa: ARG001
     absolute_archive_path: ty.Callable
 ) -> ty.Callable:
     """
@@ -225,11 +236,10 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
 
     #Load the corresponding entry points
     node_ignored_attributes = {
-        plugins.DataFactory(entry_point): tuple(set(ignored)) + ('version', )
+        plugins.DataFactory(entry_point): (*tuple(set(ignored)), "version")
         for entry_point, ignored in hash_ignore_config.get('node_attributes', {}).items()
     }
-    calcjob_ignored_attributes = tuple(hash_ignore_config.get('calcjob_attributes', [])
-                                       ) + ('version', )
+    calcjob_ignored_attributes = (*tuple(hash_ignore_config.get("calcjob_attributes", [])), "version")
     calcjob_ignored_inputs = tuple(hash_ignore_config.get('calcjob_inputs', []))
 
     def mock_objects_to_hash_code(self):

@@ -3,6 +3,7 @@ Test that ignoring paths works as expected.
 """
 import os
 from pathlib import Path
+
 import pytest
 
 from aiida_test_cache.mock_code._cli import copy_files

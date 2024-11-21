@@ -1,20 +1,18 @@
-# -*- coding: utf-8 -*-
 """
 Test basic usage of the mock code on examples using aiida-diff.
 """
 
-import shutil
-import os
 import json
+import os
+import shutil
 import tempfile
 from pathlib import Path
-from pkg_resources import parse_version
 
 import pytest
-
 from aiida import __version__ as aiida_version
 from aiida.engine import run_get_node
 from aiida.plugins import CalculationFactory
+from pkg_resources import parse_version
 
 CALC_ENTRY_POINT = 'diff'
 
