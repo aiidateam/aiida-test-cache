@@ -5,7 +5,7 @@ the executable.
 # ruff: noqa: F405
 
 from ._fixtures import *  # noqa: F403
-from ._hasher import InputHasher
+from ._hasher import InputHasher  # noqa: F401
 
 # Note: This is necessary for the sphinx doc - otherwise it does not find aiida_test_cache.mock_code.mock_code_factory
 __all__ = (
@@ -14,7 +14,6 @@ __all__ = (
     "mock_regenerate_test_data",
     "testing_config",
     "mock_code_factory",
-    "InputHasher",
 )
 
 # ensure aiida's pytest plugin is loaded, which we rely on

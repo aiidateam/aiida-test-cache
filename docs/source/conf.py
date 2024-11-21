@@ -29,6 +29,7 @@ if on_rtd:  # let RTD set the theme
     pass
 else:
     with contextlib.suppress(ImportError):
+        import sphinx_rtd_theme  # noqa: F401
         html_theme = 'sphinx_rtd_theme'
 
 # -- General configuration ------------------------------------------------
