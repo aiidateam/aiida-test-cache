@@ -85,7 +85,7 @@ dedent_closing_brackets = true
 column_limit = 100
 
 [tool.ruff]
-line-length = 120
+line-length = 130
 show-fixes = true
 
 [tool.ruff.lint]

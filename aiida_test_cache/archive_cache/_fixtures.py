@@ -155,7 +155,9 @@ def absolute_archive_path(
 
 @pytest.fixture(scope='function')
 def enable_archive_cache(
-    liberal_hash: None, archive_cache_forbid_migration: bool, archive_cache_overwrite: bool,  # noqa: ARG001
+    liberal_hash: None,  # noqa: ARG001
+    archive_cache_forbid_migration: bool,
+    archive_cache_overwrite: bool,
     absolute_archive_path: ty.Callable
 ) -> ty.Callable:
     """
@@ -237,7 +239,9 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
         plugins.DataFactory(entry_point): (*tuple(set(ignored)), "version")
         for entry_point, ignored in hash_ignore_config.get('node_attributes', {}).items()
     }
-    calcjob_ignored_attributes = (*tuple(hash_ignore_config.get("calcjob_attributes", [])), "version")
+    calcjob_ignored_attributes = (
+        *tuple(hash_ignore_config.get("calcjob_attributes", [])), "version"
+    )
     calcjob_ignored_inputs = tuple(hash_ignore_config.get('calcjob_inputs', []))
 
     def mock_objects_to_hash_code(self):

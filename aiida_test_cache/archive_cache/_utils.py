@@ -110,9 +110,7 @@ try:
                 raise
 
 except ImportError:
-    from aiida.tools.importexport import (
-        export as create_archive,  # type: ignore[import-not-found,no-redef]
-    )
+    from aiida.tools.importexport import export as create_archive  # type: ignore[import-not-found,no-redef]
     from aiida.tools.importexport import import_data as import_archive  # type: ignore[no-redef]
     import_archive = partial(
         import_archive, extras_mode_existing='ncu', extras_mode_new='import'
@@ -134,9 +132,7 @@ except ImportError:
             IncompatibleArchiveVersionError,
             detect_archive_type,
         )
-        from aiida.tools.importexport.archive.migrators import (
-            get_migrator,  # type: ignore[import-not-found]
-        )
+        from aiida.tools.importexport.archive.migrators import get_migrator  # type: ignore[import-not-found]
 
         try:
             import_archive(archive_path, *args, **kwargs)
