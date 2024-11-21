@@ -44,7 +44,7 @@ class InputHasher:
 
         return md5sum.hexdigest()
 
-    def modify_content(self, _path: Path, content: bytes) -> ty.Optional[bytes]:
+    def modify_content(self, path: Path, content: bytes) -> ty.Optional[bytes]:  # noqa: ARG002
         """A sub-class hook to modify the contents of the file, before hashing.
 
         If None is returned, the file is ignored, when generating the hash.
