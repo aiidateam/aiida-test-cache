@@ -34,7 +34,7 @@ Enable enable automatic checks of code sanity and coding style::
     pre-commit install
 
 After this, the `yapf <https://github.com/google/yapf>`_ formatter,
-the `pylint <https://www.pylint.org/>`_ linter, and
+the `ruff <https://docs.astral.sh/ruff/>`_ linter, and
 the `mypy <http://www.mypy-lang.org/>`_ static type checker will run
 at every commit.
 

@@ -1,8 +1,6 @@
 """
 Test basic usage of the mock code on examples using aiida-diff.
 """
-# pylint: disable=unused-argument, protected-access, too-many-arguments, invalid-name
-
 import os
 
 import pytest
@@ -22,7 +20,6 @@ class DiffWorkChain(WorkChain):
     """
     Very simple workchain which wraps a diff calculation for testing purposes
     """
-    #pylint: disable=missing-function-docstring
 
     @classmethod
     def define(cls, spec):
@@ -149,7 +146,7 @@ def test_mock_hash_codes(mock_code_factory, clear_database, liberal_hash):
 def test_enable_archive_cache(
     archive_path, aiida_local_code_factory, generate_diff_inputs, enable_archive_cache,
     clear_database, check_diff_workchain
-):  # pylint: disable=too-many-positional-arguments
+):
     """
     Basic test of the enable_archive_cache fixture
     """
@@ -167,7 +164,7 @@ def test_enable_archive_cache(
 def test_enable_archive_cache_non_existent(
     aiida_local_code_factory, generate_diff_inputs, enable_archive_cache, clear_database,
     tmp_path_factory, check_diff_workchain
-):  # pylint: disable=too-many-positional-arguments
+):
     """
     Test of the enable_archive_cache fixture that creation of the archive
     and overwriting of the archive works correctly

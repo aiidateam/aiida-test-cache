@@ -5,7 +5,7 @@ import pytest
 
 pytest_plugins = [
     'pytester',
-]  # pylint: disable=invalid-name
+]
 
 
 @pytest.fixture
@@ -15,7 +15,6 @@ def generate_diff_inputs(datadir):
     """
 
     def _generate_diff_inputs():
-        #pylint: disable=import-outside-toplevel
         from aiida.orm import SinglefileData
         from aiida.plugins import DataFactory
 

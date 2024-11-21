@@ -46,8 +46,6 @@ def monkeypatch_hash_objects(
         monkeypatched on the Nodes, i.e. the _CLS_NODE_CACHING attribute
 
     """
-    #pylint: disable=too-few-public-methods,protected-access
-
     try:
         monkeypatch.setattr(node_class, "_get_objects_to_hash", hash_objects_func)
     except AttributeError:
@@ -74,7 +72,7 @@ def get_node_from_hash_objects_caller(caller: ty.Any) -> Node:
     try:
         #Case for AiiDA 2.0: The class holding the _get_objects_to_hash method
         #is the NodeCaching class not the actual node
-        return caller._node  #type: ignore[no-any-return] #pylint: disable=protected-access
+        return caller._node  #type: ignore[no-any-return]
     except AttributeError:
         return caller  #type: ignore[no-any-return]
 
@@ -94,7 +92,6 @@ try:
         Import AiiDA Archive. If the version is incompatible
         try to migrate the archive if --archive-cache-forbid-migration option is not specified
         """
-        #pylint: disable=import-outside-toplevel
         from aiida.common.exceptions import IncompatibleStorageSchema
         from aiida.tools.archive import get_format
 
@@ -131,7 +128,6 @@ except ImportError:
         Import AiiDA Archive. If the version is incompatible
         try to migrate the archive if --archive-cache-forbid-migration option is not specified
         """
-        #pylint: disable=import-outside-toplevel
         # these are only availbale after aiida >= 1.5.0, maybe rely on verdi import instead
         from aiida.tools.importexport import (
             EXPORT_VERSION,

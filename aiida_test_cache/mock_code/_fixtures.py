@@ -88,7 +88,7 @@ def mock_disable_mpi(request):
 
 
 @pytest.fixture(scope='session')
-def testing_config(testing_config_action):  # pylint: disable=redefined-outer-name
+def testing_config(testing_config_action):
     """Get content of .aiida-test-cache-config.yml
 
     testing_config_action :
@@ -119,7 +119,7 @@ def mock_code_factory(
     aiida_localhost, testing_config, testing_config_action, mock_regenerate_test_data,
     mock_fail_on_missing, mock_disable_mpi, monkeypatch, request: pytest.FixtureRequest,
     tmp_path: pathlib.Path
-):  # pylint: disable=all
+):
     """
     Fixture to create a mock AiiDA Code.
 
@@ -143,7 +143,7 @@ def mock_code_factory(
         _regenerate_test_data: bool = mock_regenerate_test_data,
         _fail_on_missing: bool = mock_fail_on_missing,
         _disable_mpi: bool = mock_disable_mpi,
-    ):  # pylint: disable=too-many-arguments,too-many-branches,too-many-locals
+    ):
         """
         Creates a mock AiiDA code. If the same inputs have been run previously,
         the results are copied over from the corresponding sub-directory of

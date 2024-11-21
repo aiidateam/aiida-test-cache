@@ -12,7 +12,7 @@ from ._hasher import InputHasher, load_hasher
 
 
 @dataclass
-class MockVariables:  # pylint: disable=too-many-instance-attributes
+class MockVariables:
     """
     A class containing variables defined for the mock code execution.
     """

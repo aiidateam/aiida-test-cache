@@ -2,8 +2,6 @@
 Defines pytest fixtures for automatically enable caching in tests and create aiida archives if not existent.
 Meant to be useful for WorkChain tests.
 """
-# pylint: disable=unused-argument, protected-access, redefined-outer-name
-
 import os
 import pathlib
 import shutil

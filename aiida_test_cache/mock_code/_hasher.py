@@ -6,7 +6,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 if ty.TYPE_CHECKING:
-    from ._env_keys import MockVariables  # pylint: disable=unused-import
+    from ._env_keys import MockVariables
 
 
 class InputHasher:

@@ -129,7 +129,7 @@ def test_broken_code_generate(mock_code_factory, testing_config):
     assert 'diff-broken' in testing_config.get('mock_code')
 
 
-def test_regenerate_test_data(mock_code_factory, generate_diff_inputs, datadir):  # pylint: disable=redefined-outer-name
+def test_regenerate_test_data(mock_code_factory, generate_diff_inputs, datadir):
     """
     Check that mock code regenerates test data if asked to do so.
 
@@ -156,7 +156,7 @@ def test_regenerate_test_data(mock_code_factory, generate_diff_inputs, datadir):
 
 
 @pytest.mark.usefixtures('relative_code')
-def test_regenerate_test_data_relative(mock_code_factory, generate_diff_inputs, datadir):  # pylint: disable=redefined-outer-name
+def test_regenerate_test_data_relative(mock_code_factory, generate_diff_inputs, datadir):
     """
     Check that mock code regenerates test data if asked to do so
     for a executable specified with a relative path.
@@ -183,7 +183,7 @@ def test_regenerate_test_data_relative(mock_code_factory, generate_diff_inputs, 
     assert (datadir / 'file1.txt').is_file()
 
 
-def test_regenerate_test_data_executable(mock_code_factory, generate_diff_inputs, datadir):  # pylint: disable=redefined-outer-name
+def test_regenerate_test_data_executable(mock_code_factory, generate_diff_inputs, datadir):
     """
     Check that mock code regenerates test data if asked to do so
     for a executable specified is only specified via the executable name
@@ -214,7 +214,7 @@ def test_regenerate_test_data_executable(mock_code_factory, generate_diff_inputs
 @pytest.mark.skipif(
     parse_version(aiida_version) < parse_version('2.1.0'), reason='requires AiiDA v2.1.0+'
 )
-def test_disable_mpi(mock_code_factory, generate_diff_inputs):  # pylint: disable=unused-argument
+def test_disable_mpi(mock_code_factory, generate_diff_inputs):
     """
     Check that disabling MPI is respected.
 
