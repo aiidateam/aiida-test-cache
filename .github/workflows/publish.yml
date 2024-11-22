@@ -1,0 +1,85 @@
+# WARNING: This file should not be renamed!
+# It's name is tied to Trusted Publishing on PyPI.
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+    # Trigger TestPyPI publish when the `test-release` label is added to a PR
+    types: [labeled]
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  dist:
+    name: Distribution build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: hynek/build-and-inspect-python-package@v2
+
+  test-publish:
+    needs: [dist]
+    name: Publish to TestPyPI
+    if: >-
+      github.repository == 'aiidateam/aiida-test-cache' &&
+      github.event_name == 'pull_request' &&
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'test-release'
+    environment:
+       name: testpypi
+       url: https://test.pypi.org/p/aiida-test-cache/
+    permissions:
+      id-token: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Packages
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+      # Remove the PR label which triggered this release,
+      # but only if the release failed. Presumably, in this case we might want
+      # to fix whatever caused the failure and re-trigger the test release.
+      # If the release succeeded, re-triggering the release would fail anyway,
+      # unless the version would be bumped again.
+      - name: Remove test-release label
+        if: failure()
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          labels: test-release
+
+  pypi-publish:
+    name: Publish release to PyPI
+    needs: [dist]
+    if: >-
+      github.repository == 'aiidateam/aiida-test-cache' &&
+      github.event_name == 'push' &&
+      github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    environment:
+       name: pypi
+       url: https://pypi.org/p/promdens/
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Packages
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
