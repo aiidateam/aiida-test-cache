@@ -10,11 +10,10 @@
 # serve to show the default.
 
 import contextlib
+import importlib.metadata
 import os
 import sys
 import time
-
-import aiida_test_cache
 
 # -- AiiDA-related setup --------------------------------------------------
 
@@ -76,7 +75,7 @@ copyright = f'{copyright_year_string}, {copyright_owners}. All rights reserved' 
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = aiida_test_cache.__version__
+release = importlib.metadata.version('aiida_test_cache')
 # The short X.Y version.
 version = '.'.join(release.split('.')[:2])
 
