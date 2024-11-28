@@ -91,9 +91,10 @@ jobs:
     name: Publish release to PyPI
     needs: [dist, check-release-tag]
     if: >-
+      false &&
       github.repository == 'aiidateam/aiida-test-cache' &&
       github.event_name == 'push' &&
-      github.ref_type == 'tag'
+      github.ref_type == 'invalid'
     runs-on: ubuntu-latest
     environment:
        name: pypi
