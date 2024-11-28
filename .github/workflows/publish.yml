@@ -1,5 +1,9 @@
 # WARNING: This file should not be renamed!
 # It's name is tied to Trusted Publishing on PyPI.
+#
+# Deploy to PyPI when a release tag vX.Y.Z is created.
+# Will only be published to PyPI if the git tag matches the released version.
+# Additionally, creating a "test-release" label on a PR will trigger a publish to TestPyPI.
 name: Publish
 
 on:
@@ -7,13 +11,33 @@ on:
     tags:
       - "v*"
   pull_request:
-    # Trigger TestPyPI publish when the `test-release` label is added to a PR
     types: [labeled]
 
 env:
   FORCE_COLOR: 1
 
 jobs:
+
+  check-release-tag:
+    name: Check tag version
+    if: >-
+      github.repository == 'aiidateam/aiida-test-cache' &&
+      github.event_name == 'push' &&
+      github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check version tag
+        run: |
+          ver=$(python -c "from tomllib import load;p=load(open('pyproject.toml','rb'));print(p['project']['version'])")
+          errormsg="tag '${{ github.ref_name }}' does not match version '$ver' from pyproject.toml"
+          if [ "v${ver}" != "${{ github.ref_name }}" ]; then echo "$errormsg"; exit 1; fi
+
+
   dist:
     name: Distribution build
     runs-on: ubuntu-latest
@@ -24,6 +48,7 @@ jobs:
           fetch-depth: 0
 
       - uses: hynek/build-and-inspect-python-package@v2
+
 
   test-publish:
     needs: [dist]
@@ -62,9 +87,10 @@ jobs:
         with:
           labels: test-release
 
+
   pypi-publish:
     name: Publish release to PyPI
-    needs: [dist]
+    needs: [dist, check-version]
     if: >-
       github.repository == 'aiidateam/aiida-test-cache' &&
       github.event_name == 'push' &&
@@ -72,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
        name: pypi
-       url: https://pypi.org/p/promdens/
+       url: https://pypi.org/p/aiida-test-cache/
     permissions:
       id-token: write
 
