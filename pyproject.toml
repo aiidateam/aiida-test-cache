@@ -7,8 +7,8 @@ name = "aiida_test_cache"
 
 [project]
 name = "aiida-test-cache"
+version = "0.0.1a1"
 description = "A pytest plugin to simplify testing of AiiDA workflows"
-dynamic = ["version"]
 authors = [
     {name = "Dominik Gresch"},
     {name = "Leopold Talirz"},

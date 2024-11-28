@@ -1,0 +1,110 @@
+# WARNING: This file should not be renamed!
+# It's name is tied to Trusted Publishing on PyPI.
+#
+# Deploy to PyPI when a release tag vX.Y.Z is created.
+# Will only be published to PyPI if the git tag matches the released version.
+# Additionally, creating a "test-release" label on a PR will trigger a publish to TestPyPI.
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+    types: [labeled]
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+
+  check-release-tag:
+    name: Check tag version
+    if: >-
+      github.repository == 'aiidateam/aiida-test-cache' &&
+      github.event_name == 'push' &&
+      github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check version tag
+        run: |
+          ver=$(python -c "from tomllib import load;p=load(open('pyproject.toml','rb'));print(p['project']['version'])")
+          errormsg="tag version '${{ github.ref_name }}' != 'v$ver' specified in pyproject.toml"
+          if [ "v${ver}" != "${{ github.ref_name }}" ]; then echo "$errormsg"; exit 1; fi
+
+  dist:
+    name: Distribution build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: hynek/build-and-inspect-python-package@v2
+
+
+  test-publish:
+    needs: [dist]
+    name: Publish to TestPyPI
+    if: >-
+      github.repository == 'aiidateam/aiida-test-cache' &&
+      github.event_name == 'pull_request' &&
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'test-release'
+    environment:
+       name: testpypi
+       url: https://test.pypi.org/p/aiida-test-cache/
+    permissions:
+      id-token: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Packages
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+      # Remove the PR label which triggered this release,
+      # but only if the release failed. Presumably, in this case we might want
+      # to fix whatever caused the failure and re-trigger the test release.
+      # If the release succeeded, re-triggering the release would fail anyway,
+      # unless the version would be bumped again.
+      - name: Remove test-release label
+        if: failure()
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          labels: test-release
+
+
+  pypi-publish:
+    name: Publish release to PyPI
+    needs: [dist, check-release-tag]
+    if: >-
+      github.repository == 'aiidateam/aiida-test-cache' &&
+      github.event_name == 'push' &&
+      github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    environment:
+       name: pypi
+       url: https://pypi.org/p/aiida-test-cache/
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Packages
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
