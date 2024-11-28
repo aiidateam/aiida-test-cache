@@ -30,7 +30,7 @@ jobs:
       - name: Check version tag
         run: |
           ver=$(python -c "from tomllib import load;p=load(open('pyproject.toml','rb'));print(p['project']['version'])")
-          errormsg="tag version '${{ github.ref_name }}' != v'$ver' specified in pyproject.toml"
+          errormsg="tag version '${{ github.ref_name }}' != 'v$ver' specified in pyproject.toml"
           if [ "v${ver}" != "${{ github.ref_name }}" ]; then echo "$errormsg"; exit 1; fi
 
   dist:
