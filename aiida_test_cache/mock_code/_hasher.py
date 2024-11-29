@@ -34,6 +34,10 @@ class InputHasher:
                 file_content_bytes = file_obj.read()
             if path.name == self.SUBMIT_FILE:
                 file_content_bytes = self._strip_submit_content(file_content_bytes)
+                # TODO: This is a temporary ugly hack for backward compatibility with aiida-core<2.3
+                # REVERT THIS after 0.0.1 release!
+                if not file_content_bytes.endswith(b" "):
+                    file_content_bytes += b" "
             file_content_bytes = self.modify_content(path, file_content_bytes)
             if file_content_bytes is not None:
                 md5sum.update(path.name.encode())
