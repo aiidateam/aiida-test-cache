@@ -57,10 +57,10 @@ jobs:
     - name: Run test suite
       env:
         # show timings of tests
-        PYTEST_ADDOPTS: "--durations=0"
+        PYTEST_ADDOPTS: "--durations=10"
       run: |
         aiida-mock-code || true
-        cd tests; pytest
+        pytest -s
 
   pre-commit:
     runs-on: ubuntu-latest
