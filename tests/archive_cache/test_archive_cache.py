@@ -60,14 +60,14 @@ def check_diff_workchain_fixture():
         assert node.is_finished_ok
         assert res['computed_diff'].get_content() == EXPECTED_DIFF
 
-        #Test if cache was used?
+        # Test if cache was used?
         diffjob = node.get_outgoing().get_node_by_label('CALL')
-        cache_src = diffjob.get_cache_source()
-        print(diffjob._get_objects_to_hash())  # in case of failure to compare
 
         calc_hash = diffjob.get_hash()
-        assert calc_hash == EXPECTED_HASH
+        assert calc_hash == EXPECTED_HASH, f'Hash mismatch. hashed objects: {diffjob.base.caching.get_objects_to_hash()}'
+
         #Make sure that the cache was used if it should have been
+        cache_src = diffjob.get_cache_source()
         if should_have_used_cache:
             assert cache_src is not None
         else:
@@ -127,7 +127,7 @@ def test_load_node_archive(aiida_profile_clean, absolute_archive_path):
 
 
 def test_mock_hash_codes(aiida_profile_clean, mock_code_factory, liberal_hash):
-    """test if mock of _get_objects_to_hash works for Code and Calcs"""
+    """test if mock of get_objects_to_hash() works for Code and Calcs"""
 
     mock_code = mock_code_factory(
         label='diff',
@@ -135,8 +135,8 @@ def test_mock_hash_codes(aiida_profile_clean, mock_code_factory, liberal_hash):
         entry_point=CALC_ENTRY_POINT,
         ignore_paths=('_aiidasubmit.sh', 'file*')
     )
-    objs = mock_code._get_objects_to_hash()
-    assert objs == [mock_code.get_attribute(key='input_plugin')]  #, mock_code.get_computer_name()]
+    objs = mock_code.base.caching.get_objects_to_hash()
+    assert objs == {'input_plugin': mock_code.get_attribute(key='input_plugin')}
 
 
 @pytest.mark.parametrize(
