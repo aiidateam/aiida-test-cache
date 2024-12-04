@@ -57,7 +57,7 @@ tests = [
     "aiida-diff",
     "pytest-datadir",
     "pytest-mock",
-    "pytest-cov~=6.0",
+    "pytest-cov>=4.0",
 ]
 pre_commit = [
     "pre-commit",
