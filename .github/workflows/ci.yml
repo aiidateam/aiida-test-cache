@@ -6,7 +6,7 @@ on:
             - main
     pull_request:
 env:
-    UV_VER: "0.5.2"
+    UV_VER: "0.5.6"
     FORCE_COLOR: 1
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
       fail-fast: false
 
     services:
@@ -46,13 +46,11 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Set up uv
-      uses: astral-sh/setup-uv@v3
+      uses: astral-sh/setup-uv@v4
       with:
         version: ${{ env.UV_VER }}
     - name: Install package
-      run: |
-        uv pip install --system -e .[tests]
-        reentry scan -r aiida || true
+      run: uv pip install --system -e .[tests]
 
     - name: Run test suite
       env:
@@ -60,7 +58,7 @@ jobs:
         PYTEST_ADDOPTS: "--durations=0"
       run: |
         aiida-mock-code || true
-        pytest -s --cov=aiida_test_cache tests/
+        pytest --cov=aiida_test_cache tests/
 
     - name: Upload coverage report
       uses: codecov/codecov-action@v5
@@ -82,7 +80,7 @@ jobs:
         python-version: '3.12'
 
     - name: Set up uv
-      uses: astral-sh/setup-uv@v3
+      uses: astral-sh/setup-uv@v4
       with:
         version: ${{ env.UV_VER }}
 
@@ -90,4 +88,4 @@ jobs:
       run: uv pip install --system -e .[pre_commit]
 
     - name: Run pre-commit
-      uses: pre-commit/action@v3.0.1
+      uses: pre-commit/action@v3
