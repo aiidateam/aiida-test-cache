@@ -63,7 +63,7 @@ jobs:
         pytest --cov=aiida_test_cache tests/
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         name: pytest-py${{ matrix.python-version }}
