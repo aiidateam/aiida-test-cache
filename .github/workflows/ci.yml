@@ -60,7 +60,15 @@ jobs:
         PYTEST_ADDOPTS: "--durations=0"
       run: |
         aiida-mock-code || true
-        cd tests; pytest
+        pytest --cov=aiida_test_cache tests/
+
+    - name: Upload coverage report
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        name: pytest-py${{ matrix.python-version }}
+        file: ./coverage.xml
+        fail_ci_if_error: false  # don't fail job, if coverage upload fails
 
   pre-commit:
     runs-on: ubuntu-latest

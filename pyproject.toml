@@ -57,6 +57,7 @@ tests = [
     "aiida-diff",
     "pytest-datadir",
     "pytest-mock",
+    "pytest-cov~=6.0",
 ]
 pre_commit = [
     "pre-commit",
@@ -76,6 +77,7 @@ aiida_mock_code = "aiida_test_cache.mock_code"
 aiida_archive_cache = "aiida_test_cache.archive_cache"
 
 [tool.pytest.ini_options]
+addopts = '--durations=10 --durations-min=3 --strict-config --strict-markers -ra --cov-report xml --cov-append'
 filterwarnings = []
 
 [tool.yapf]
