@@ -67,7 +67,7 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         name: pytest-py${{ matrix.python-version }}
-        file: ./coverage.xml
+        files: ./coverage.xml
         fail_ci_if_error: false  # don't fail job, if coverage upload fails
 
   pre-commit:
