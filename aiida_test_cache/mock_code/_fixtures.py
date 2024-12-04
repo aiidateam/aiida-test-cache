@@ -8,7 +8,6 @@ import pathlib
 import shutil
 import typing as ty
 import uuid
-import warnings
 
 import click
 import pytest
@@ -134,7 +133,6 @@ def mock_code_factory(
         label: str,
         entry_point: ty.Optional[str] = None,
         data_dir_abspath: ty.Union[None, str, pathlib.Path] = None,
-        ignore_files: ty.Iterable[str] = ('_aiidasubmit.sh', ),
         ignore_paths: ty.Iterable[str] = ('_aiidasubmit.sh', ),
         executable_name: str = '',
         hasher: type[InputHasher] = InputHasher,
@@ -159,9 +157,6 @@ def mock_code_factory(
         data_dir_abspath :
             Absolute path of the directory where the code results are
             stored.
-        ignore_files :
-            A list of file names (UNIX shell style patterns allowed) which are not copied to the results directory
-            after the code has been executed.
         ignore_paths :
             A list of paths (UNIX shell style patterns allowed) that are not copied to the results directory
             after the code has been executed.
@@ -174,21 +169,10 @@ def mock_code_factory(
             If 'generate', add new key (label) to config dictionary.
         _regenerate_test_data :
             If True, regenerate test data instead of reusing.
-
-        .. deprecated:: 0.1.0
-            Keyword `ignore_files` is deprecated and will be removed in `v1.0`. Use `ignore_paths` instead.
         """
-        if ignore_files != ('_aiidasubmit.sh', ):
-            warnings.warn(
-                'keyword `ignore_files` is deprecated and will be removed in `v1.0`. Use `ignore_paths` instead.',
-                DeprecationWarning,
-                stacklevel=2
-            )
-
         # It's easy to forget the final comma and pass a string, e.g. `ignore_paths = ('_aiidasubmit.sh')`
-        for arg in (ignore_paths, ignore_files):
-            assert isinstance(arg, collections.abc.Iterable) and not isinstance(arg, str), \
-                f"'ignore_files' and 'ignore_paths' arguments must be tuples or lists, found {type(arg)}"
+        assert isinstance(ignore_paths, collections.abc.Iterable) and not isinstance(ignore_paths, str), \
+                f"'ignore_paths' argument must be tuple or list, found {type(ignore_paths)}"
 
         if entry_point is None:
             entry_point = label
@@ -255,7 +239,6 @@ def mock_code_factory(
             test_name=request.node.name,
             data_dir=data_dir_pl,
             executable_path=code_executable_path,
-            ignore_files=ignore_files,
             ignore_paths=ignore_paths,
             regenerate_data=_regenerate_test_data,
             fail_on_missing=_fail_on_missing,

@@ -30,7 +30,7 @@ First, we want to define a fixture for our mocked code in the ``conftest.py``:
             data_dir_abspath=DATA_DIR,
             entry_point='diff',
             # files *not* to copy into the data directory
-            ignore_files=('_aiidasubmit.sh', 'file*')
+            ignore_paths=('_aiidasubmit.sh', 'file*')
         )
 
 Second, we need to tell the mock executable where to find the *actual* ``diff`` executable by creating a ``.aiida-test-cache-config.yml`` file in the top level of our plugin.

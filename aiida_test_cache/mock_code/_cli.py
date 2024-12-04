@@ -2,7 +2,6 @@
 """
 Implements the executable for running a mock AiiDA code.
 """
-import fnmatch
 import os
 import shutil
 import subprocess
@@ -68,12 +67,7 @@ def run() -> None:
 
         # back up results to data directory
         os.makedirs(res_dir)
-        copy_files(
-            src_dir=Path('.'),
-            dest_dir=res_dir,
-            ignore_files=env.ignore_files,
-            ignore_paths=env.ignore_paths
-        )
+        copy_files(src_dir=Path('.'), dest_dir=res_dir, ignore_paths=env.ignore_paths)
 
     else:
         # copy outputs from data directory to working directory
@@ -87,15 +81,11 @@ def run() -> None:
                 _log(f"Can not copy '{path.name}'.", error=True)
 
 
-def copy_files(
-    src_dir: Path, dest_dir: Path, ignore_files: ty.Iterable[str], ignore_paths: ty.Iterable[str]
-) -> None:
+def copy_files(src_dir: Path, dest_dir: Path, ignore_paths: ty.Iterable[str]) -> None:
     """Copy files from source to destination directory while ignoring certain files/folders.
 
     :param src_dir: Source directory
     :param dest_dir: Destination directory
-    :param ignore_files: A list of file names (UNIX shell style patterns allowed) which are not copied to the
-        destination.
     :param ignore_paths: A list of paths (UNIX shell style patterns allowed) which are not copied to the destination.
     """
     exclude_paths: set = {filepath for path in ignore_paths for filepath in src_dir.glob(path)}
@@ -115,8 +105,6 @@ def copy_files(
             continue
 
         for filename in filenames:
-            if any(fnmatch.fnmatch(filename, expr) for expr in ignore_files):
-                continue
 
             if relative_dir / filename in exclude_files:
                 continue
