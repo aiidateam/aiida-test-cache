@@ -33,8 +33,8 @@ from ._utils import (
 )
 
 __all__ = (
-    "pytest_addoption", "absolute_archive_path", "enable_archive_cache", "liberal_hash",
-    "archive_cache_forbid_migration", "archive_cache_overwrite"
+    "absolute_archive_path", "archive_cache_forbid_migration", "archive_cache_overwrite",
+    "enable_archive_cache", "liberal_hash", "pytest_addoption"
 )
 
 
@@ -172,8 +172,7 @@ def enable_archive_cache(
     @contextmanager
     def _enable_archive_cache(
         archive_path: ty.Union[str, pathlib.Path],
-        calculation_class: ty.Union[ty.Type[CalcJobNode], ty.Sequence[ty.Type[CalcJobNode]],
-                                    None] = None,
+        calculation_class: ty.Union[type[CalcJobNode], ty.Sequence[type[CalcJobNode]], None] = None,
         overwrite: bool = False
     ) -> ty.Generator[None, None, None]:
         """
@@ -210,7 +209,7 @@ def enable_archive_cache(
             # create export of all calculation_classes
             # Another solution out of this is to check the time before and
             # after the yield and export ONLY the jobcalc classes created within this time frame
-            queryclass: ty.Union[ty.Type[CalcJobNode], ty.Sequence[ty.Type[CalcJobNode]]]
+            queryclass: ty.Union[type[CalcJobNode], ty.Sequence[type[CalcJobNode]]]
             if calculation_class is None:
                 queryclass = CalcJobNode
             else:

@@ -80,4 +80,4 @@ jobs:
       run: uv pip install --system -e .[pre_commit]
 
     - name: Run pre-commit
-      uses: pre-commit/action@v3
+      uses: pre-commit/action@v3.0.1

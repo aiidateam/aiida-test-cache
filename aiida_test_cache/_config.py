@@ -4,7 +4,6 @@ Helpers for managing the ``.aiida-test-cache-config.yml`` configuration file.
 
 import collections
 import pathlib
-import typing as ty
 from enum import Enum
 
 import yaml
@@ -55,7 +54,7 @@ class Config(collections.abc.MutableMapping):
         directories.
         """
         cwd = pathlib.Path().cwd()
-        config: ty.Dict[str, str]
+        config: dict[str, str]
         for dir_path in [cwd, *cwd.parents]:
             config_file_path = dir_path / CONFIG_FILE_NAME
             if config_file_path.exists():

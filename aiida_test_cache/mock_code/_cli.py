@@ -98,7 +98,7 @@ def copy_files(
         destination.
     :param ignore_paths: A list of paths (UNIX shell style patterns allowed) which are not copied to the destination.
     """
-    exclude_paths: ty.Set = {filepath for path in ignore_paths for filepath in src_dir.glob(path)}
+    exclude_paths: set = {filepath for path in ignore_paths for filepath in src_dir.glob(path)}
     exclude_files = {path.relative_to(src_dir) for path in exclude_paths if path.is_file()}
     exclude_dirs = {path.relative_to(src_dir) for path in exclude_paths if path.is_dir()}
 

@@ -26,7 +26,7 @@ class MockVariables:
     ignore_paths: ty.Iterable[str]
     regenerate_data: bool
     fail_on_missing: bool
-    _hasher: ty.Union[str, ty.Type[InputHasher]]
+    _hasher: ty.Union[str, type[InputHasher]]
 
     @classmethod
     def from_env(cls) -> "MockVariables":
@@ -46,7 +46,7 @@ class MockVariables:
             _hasher=os.environ.get(_EnvKeys.HASHER.value, InputHasher),
         )
 
-    def get_hasher(self) -> ty.Type[InputHasher]:
+    def get_hasher(self) -> type[InputHasher]:
         """
         Return the hasher class.
         """

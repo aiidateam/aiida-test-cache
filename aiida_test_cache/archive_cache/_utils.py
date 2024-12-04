@@ -11,7 +11,7 @@ import pytest
 from aiida.cmdline.utils.echo import echo_warning
 from aiida.orm import Node, ProcessNode, QueryBuilder
 
-__all__ = ('rehash_processes', 'monkeypatch_hash_objects')
+__all__ = ('monkeypatch_hash_objects', 'rehash_processes')
 
 
 def rehash_processes() -> None:
@@ -26,7 +26,7 @@ def rehash_processes() -> None:
 
 
 def monkeypatch_hash_objects(
-    monkeypatch: pytest.MonkeyPatch, node_class: ty.Type[Node], hash_objects_func: ty.Callable
+    monkeypatch: pytest.MonkeyPatch, node_class: type[Node], hash_objects_func: ty.Callable
 ) -> None:
     """
     Monkeypatch the _get_objects_to_hash method in aiida-core for the given node class
@@ -168,7 +168,7 @@ def load_node_archive(archive_path: str, forbid_migration: bool = False) -> None
 
 
 def create_node_archive(
-    nodes: ty.Union[Node, ty.List[Node]], archive_path: str, overwrite: bool = True
+    nodes: ty.Union[Node, list[Node]], archive_path: str, overwrite: bool = True
 ) -> None:
     """
     Function to export an AiiDA graph from a given node.
