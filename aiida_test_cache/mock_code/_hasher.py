@@ -70,7 +70,7 @@ class InputHasher:
         return '\n'.join(lines).encode()
 
 
-def load_hasher(path: ty.Union[str, Path], class_name: str) -> ty.Type[InputHasher]:
+def load_hasher(path: ty.Union[str, Path], class_name: str) -> type[InputHasher]:
     """
     Load the InputHasher class from the given path.
     """

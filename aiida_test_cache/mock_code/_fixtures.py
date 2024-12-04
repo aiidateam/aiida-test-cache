@@ -21,13 +21,13 @@ from ._env_keys import MockVariables
 from ._hasher import InputHasher
 
 __all__ = (
-    "pytest_addoption",
-    "testing_config_action",
-    "mock_regenerate_test_data",
-    "mock_fail_on_missing",
-    "mock_disable_mpi",
-    "testing_config",
     "mock_code_factory",
+    "mock_disable_mpi",
+    "mock_fail_on_missing",
+    "mock_regenerate_test_data",
+    "pytest_addoption",
+    "testing_config",
+    "testing_config_action",
 )
 
 
@@ -137,7 +137,7 @@ def mock_code_factory(
         ignore_files: ty.Iterable[str] = ('_aiidasubmit.sh', ),
         ignore_paths: ty.Iterable[str] = ('_aiidasubmit.sh', ),
         executable_name: str = '',
-        hasher: ty.Type[InputHasher] = InputHasher,
+        hasher: type[InputHasher] = InputHasher,
         _config: Config = testing_config,
         _config_action: str = testing_config_action,
         _regenerate_test_data: bool = mock_regenerate_test_data,
