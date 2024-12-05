@@ -38,7 +38,7 @@ class DiffWorkChain(WorkChain):
         return ToContext(diff_calc=running)
 
     def results(self):
-        computed_diff = self.ctx.diff_calc.get_outgoing().get_node_by_label('diff')
+        computed_diff = self.ctx.diff_calc.base.links.get_outgoing().get_node_by_label('diff')
         self.out('computed_diff', computed_diff)
 
 
@@ -61,9 +61,9 @@ def check_diff_workchain_fixture():
         assert res['computed_diff'].get_content() == EXPECTED_DIFF
 
         # Test if cache was used?
-        diffjob = node.get_outgoing().get_node_by_label('CALL')
+        diffjob = node.base.links.get_outgoing().get_node_by_label('CALL')
 
-        calc_hash = diffjob.get_hash()
+        calc_hash = diffjob.base.caching.get_hash()
         assert calc_hash == EXPECTED_HASH, f'Hash mismatch. hashed objects: {diffjob.base.caching.get_objects_to_hash()}'
 
         #Make sure that the cache was used if it should have been
@@ -136,7 +136,7 @@ def test_mock_hash_codes(aiida_profile_clean, mock_code_factory, liberal_hash):
         ignore_paths=('_aiidasubmit.sh', 'file*')
     )
     objs = mock_code.base.caching.get_objects_to_hash()
-    assert objs == {'input_plugin': mock_code.get_attribute(key='input_plugin')}
+    assert objs == {'input_plugin': mock_code.base.attributes.get(key='input_plugin')}
 
 
 @pytest.mark.parametrize(
