@@ -114,8 +114,7 @@ def _forget_mpi_decorator(func):
 @pytest.fixture(scope='function')
 def mock_code_factory(
     aiida_localhost, testing_config, testing_config_action, mock_regenerate_test_data,
-    mock_fail_on_missing, mock_disable_mpi, monkeypatch, request: pytest.FixtureRequest,
-    tmp_path: pathlib.Path
+    mock_fail_on_missing, mock_disable_mpi, monkeypatch, request, tmp_path
 ):
     """
     Fixture to create a mock AiiDA Code.

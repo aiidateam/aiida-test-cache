@@ -73,7 +73,9 @@ aiida_archive_cache = "aiida_test_cache.archive_cache"
 
 [tool.pytest.ini_options]
 addopts = '--durations=10 --durations-min=3 --strict-config --strict-markers -ra --cov-report xml --cov-append'
-filterwarnings = []
+filterwarnings = [
+    'ignore:Creating AiiDA configuration:UserWarning:aiida',
+]
 
 [tool.yapf]
 based_on_style = "pep8"

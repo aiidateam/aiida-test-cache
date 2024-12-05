@@ -38,7 +38,7 @@ class DiffWorkChain(WorkChain):
         return ToContext(diff_calc=running)
 
     def results(self):
-        computed_diff = self.ctx.diff_calc.get_outgoing().get_node_by_label('diff')
+        computed_diff = self.ctx.diff_calc.base.links.get_outgoing().get_node_by_label('diff')
         self.out('computed_diff', computed_diff)
 
 
@@ -61,12 +61,12 @@ def check_diff_workchain_fixture():
         assert res['computed_diff'].get_content() == EXPECTED_DIFF
 
         #Test if cache was used?
-        diffjob = node.get_outgoing().get_node_by_label('CALL')
-        cache_src = diffjob.get_cache_source()
-        print(diffjob._get_objects_to_hash())  # in case of failure to compare
+        diffjob = node.base.links.get_outgoing().get_node_by_label('CALL')
+        cache_src = diffjob.base.caching.get_cache_source()
 
-        calc_hash = diffjob.get_hash()
-        assert calc_hash == EXPECTED_HASH
+        calc_hash = diffjob.base.caching.get_hash()
+        assert calc_hash == EXPECTED_HASH, f'Hash mismatch. hashed objects: {diffjob.base.caching._get_objects_to_hash()}'
+
         #Make sure that the cache was used if it should have been
         if should_have_used_cache:
             assert cache_src is not None
@@ -79,7 +79,9 @@ def check_diff_workchain_fixture():
 #### tests
 
 
-def test_create_node_archive(mock_code_factory, generate_diff_inputs, clear_database, tmp_path):
+def test_create_node_archive(
+    mock_code_factory, generate_diff_inputs, aiida_profile_clean, tmp_path
+):
     """
     Basic test of the create node archive fixture functionality,
     runs diff workchain and creates archive, check if archive was created
@@ -110,7 +112,7 @@ def test_create_node_archive(mock_code_factory, generate_diff_inputs, clear_data
     assert os.path.isfile(archive_path)
 
 
-def test_load_node_archive(clear_database, absolute_archive_path):
+def test_load_node_archive(aiida_profile_clean, absolute_archive_path):
     """Basic test of the load node archive fixture functionality, check if archive is loaded"""
 
     full_archive_path = absolute_archive_path('diff_workchain.tar.gz')
@@ -124,7 +126,7 @@ def test_load_node_archive(clear_database, absolute_archive_path):
     assert n_nodes == 9
 
 
-def test_mock_hash_codes(mock_code_factory, clear_database, liberal_hash):
+def test_mock_hash_codes(mock_code_factory, aiida_profile_clean, liberal_hash):
     """test if mock of _get_objects_to_hash works for Code and Calcs"""
 
     mock_code = mock_code_factory(
@@ -133,8 +135,8 @@ def test_mock_hash_codes(mock_code_factory, clear_database, liberal_hash):
         entry_point=CALC_ENTRY_POINT,
         ignore_paths=('_aiidasubmit.sh', 'file*')
     )
-    objs = mock_code._get_objects_to_hash()
-    assert objs == [mock_code.get_attribute(key='input_plugin')]  #, mock_code.get_computer_name()]
+    objs = mock_code.base.caching._get_objects_to_hash()
+    assert objs == [mock_code.base.attributes.get(key='input_plugin')]
 
 
 @pytest.mark.parametrize(
@@ -145,7 +147,7 @@ def test_mock_hash_codes(mock_code_factory, clear_database, liberal_hash):
 )
 def test_enable_archive_cache(
     archive_path, aiida_local_code_factory, generate_diff_inputs, enable_archive_cache,
-    clear_database, check_diff_workchain
+    aiida_profile_clean, check_diff_workchain
 ):
     """
     Basic test of the enable_archive_cache fixture
@@ -162,7 +164,7 @@ def test_enable_archive_cache(
 
 
 def test_enable_archive_cache_non_existent(
-    aiida_local_code_factory, generate_diff_inputs, enable_archive_cache, clear_database,
+    aiida_profile_clean, aiida_local_code_factory, generate_diff_inputs, enable_archive_cache,
     tmp_path_factory, check_diff_workchain
 ):
     """

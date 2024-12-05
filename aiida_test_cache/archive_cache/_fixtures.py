@@ -249,7 +249,7 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
         """
         self = get_node_from_hash_objects_caller(self)
         # computer names are changed by aiida-core if imported and do not have same uuid.
-        return [self.get_attribute(key='input_plugin')]
+        return [self.base.attributes.get(key='input_plugin')]
 
     def mock_objects_to_hash_calcjob(self):
         """
@@ -265,14 +265,14 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
 
         objects = [{
             key: val
-            for key, val in self.attributes_items()
+            for key, val in self.base.attributes.items()
             if key not in self._hash_ignored_attributes and key not in self._updatable_attributes
         },
                    {
-                       entry.link_label: entry.node.get_hash()
-                       for entry in
-                       self.get_incoming(link_type=(LinkType.INPUT_CALC, LinkType.INPUT_WORK))
-                       if entry.link_label not in hash_ignored_inputs
+                       entry.link_label: entry.node.base.caching.get_hash()
+                       for entry in self.base.links.get_incoming(
+                           link_type=(LinkType.INPUT_CALC, LinkType.INPUT_WORK)
+                       ) if entry.link_label not in hash_ignored_inputs
                    }]
         return objects
 
@@ -289,8 +289,8 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
         objects = [
             {
                 key: val
-                for key, val in self.attributes_items() if key not in self._hash_ignored_attributes
-                and key not in self._updatable_attributes
+                for key, val in self.base.attributes.items() if
+                key not in self._hash_ignored_attributes and key not in self._updatable_attributes
             },
         ]
         return objects

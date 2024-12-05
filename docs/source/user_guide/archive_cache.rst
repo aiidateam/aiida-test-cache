@@ -32,7 +32,7 @@ The workchain looks as follows
         return ToContext(diff_calc=running)
 
     def results(self):
-        computed_diff = self.ctx.diff_calc.get_outgoing().get_node_by_label('diff')
+        computed_diff = self.ctx.diff_calc.base.links.get_outgoing().get_node_by_label('diff')
         self.out('computed_diff', computed_diff)
 
 

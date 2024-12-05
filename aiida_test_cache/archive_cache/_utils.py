@@ -22,7 +22,7 @@ def rehash_processes() -> None:
     qub.append(ProcessNode)
     to_hash = qub.all()
     for node1 in to_hash:
-        node1[0].rehash()
+        node1[0].base.caching.rehash()
 
 
 def monkeypatch_hash_objects(
