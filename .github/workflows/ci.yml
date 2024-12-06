@@ -18,9 +18,10 @@ jobs:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12']
         aiida-version: ['2.5']
+        # Include a job with minimum supported aiida-version
         include:
           - python-version: '3.9'
-            aiida-version: '2.0'
+            aiida-version: '2.1'
       fail-fast: false
 
     services:
