@@ -11,9 +11,7 @@ import uuid
 
 import click
 import pytest
-from aiida import __version__ as aiida_version
 from aiida.orm import Code
-from pkg_resources import parse_version
 
 from .._config import CONFIG_FILE_NAME, Config, ConfigActions
 from ._env_keys import MockVariables
@@ -251,19 +249,10 @@ def mock_code_factory(
         # Monkeypatch MPI behavior of code class, if requested either directly via `--mock-disable-mpi` or
         # indirectly via `--mock-fail-on-missing` (no need to use MPI in this case)
         if _disable_mpi or _fail_on_missing:
-            is_mpi_disable_supported = parse_version(aiida_version) >= parse_version('2.1.0')
-
-            if not is_mpi_disable_supported:
-                if _disable_mpi:
-                    raise ValueError(
-                        "Upgrade to AiiDA >= 2.1.0 in order to use `--mock-disable-mpi`"
-                    )
-                # if only _fail_on_missing, we silently do not disable MPI
-            else:
-                monkeypatch.setattr(
-                    code.__class__, 'get_prepend_cmdline_params',
-                    _forget_mpi_decorator(code.__class__.get_prepend_cmdline_params)
-                )
+            monkeypatch.setattr(
+                code.__class__, 'get_prepend_cmdline_params',
+                _forget_mpi_decorator(code.__class__.get_prepend_cmdline_params)
+            )
 
         return code
 

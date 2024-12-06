@@ -9,10 +9,8 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from aiida import __version__ as aiida_version
 from aiida.engine import run_get_node
 from aiida.plugins import CalculationFactory
-from pkg_resources import parse_version
 
 CALC_ENTRY_POINT = 'diff'
 
@@ -211,9 +209,6 @@ def test_regenerate_test_data_executable(mock_code_factory, generate_diff_inputs
     assert (datadir / 'file1.txt').is_file()
 
 
-@pytest.mark.skipif(
-    parse_version(aiida_version) < parse_version('2.1.0'), reason='requires AiiDA v2.1.0+'
-)
 def test_disable_mpi(mock_code_factory, generate_diff_inputs):
     """
     Check that disabling MPI is respected.

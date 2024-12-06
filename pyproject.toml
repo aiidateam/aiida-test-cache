@@ -40,12 +40,10 @@ keywords = [
 ]
 urls = {Homepage = "https://aiida-testing.readthedocs.io/"}
 requires-python = ">=3.9"
-# Note the dependency on setuptools due to pkg_resources
 dependencies = [
-    "aiida-core>=2.0,<2.6",
+    "aiida-core>=2.1,<2.6",
     "pytest>=7.0",
     "voluptuous~=0.12",
-    "setuptools",
 ]
 
 [project.optional-dependencies]
@@ -60,7 +58,6 @@ tests = [
 pre_commit = [
     "pre-commit",
     "mypy==1.13",
-    "types-setuptools==65.7.0.3",
     "types-PyYAML",
 ]
 dev = [
