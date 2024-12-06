@@ -3,13 +3,13 @@ Defines helper functions for the archive_cache pytest fixtures
 """
 import os
 import pathlib
-import tempfile
 import typing as ty
 from functools import partial
 
 import pytest
 from aiida.cmdline.utils.echo import echo_warning
 from aiida.orm import Node, ProcessNode, QueryBuilder
+from aiida.tools.archive import create_archive, import_archive
 
 __all__ = ('monkeypatch_hash_objects', 'rehash_processes')
 
@@ -69,84 +69,38 @@ def get_node_from_hash_objects_caller(caller: ty.Any) -> Node:
 
     :param caller: object holding _get_objects_to_hash
     """
+    #Case for AiiDA 2.0: The class holding the _get_objects_to_hash method
+    #is the NodeCaching class not the actual node
+    return caller._node  #type: ignore[no-any-return]
+
+
+import_archive = partial(import_archive, merge_extras=('n', 'c', 'u'), import_new_extras=True)
+
+
+def import_with_migrate(
+    archive_path: ty.Union[str, pathlib.Path],
+    *args: ty.Any,
+    forbid_migration: bool = False,
+    **kwargs: ty.Any,
+) -> None:
+    """
+    Import AiiDA Archive. If the version is incompatible
+    try to migrate the archive if --archive-cache-forbid-migration option is not specified
+    """
+    from aiida.common.exceptions import IncompatibleStorageSchema
+    from aiida.tools.archive import get_format
+
     try:
-        #Case for AiiDA 2.0: The class holding the _get_objects_to_hash method
-        #is the NodeCaching class not the actual node
-        return caller._node  #type: ignore[no-any-return]
-    except AttributeError:
-        return caller  #type: ignore[no-any-return]
-
-
-#Cross-compatible importing function for import AiiDA archives in 1.X and 2.X
-try:
-    from aiida.tools.archive import create_archive, import_archive
-    import_archive = partial(import_archive, merge_extras=('n', 'c', 'u'), import_new_extras=True)
-
-    def import_with_migrate(
-        archive_path: ty.Union[str, pathlib.Path],
-        *args: ty.Any,
-        forbid_migration: bool = False,
-        **kwargs: ty.Any,
-    ) -> None:
-        """
-        Import AiiDA Archive. If the version is incompatible
-        try to migrate the archive if --archive-cache-forbid-migration option is not specified
-        """
-        from aiida.common.exceptions import IncompatibleStorageSchema
-        from aiida.tools.archive import get_format
-
-        try:
+        import_archive(archive_path, *args, **kwargs)
+    except IncompatibleStorageSchema:
+        if not forbid_migration:
+            echo_warning(f'incompatible version detected for {archive_path}, trying migration')
+            archive_format = get_format()
+            version = archive_format.latest_version
+            archive_format.migrate(archive_path, archive_path, version, force=True, compression=6)
             import_archive(archive_path, *args, **kwargs)
-        except IncompatibleStorageSchema:
-            if not forbid_migration:
-                echo_warning(f'incompatible version detected for {archive_path}, trying migration')
-                archive_format = get_format()
-                version = archive_format.latest_version
-                archive_format.migrate(
-                    archive_path, archive_path, version, force=True, compression=6
-                )
-                import_archive(archive_path, *args, **kwargs)
-            else:
-                raise
-
-except ImportError:
-    from aiida.tools.importexport import export as create_archive  # type: ignore[import-not-found,no-redef]
-    from aiida.tools.importexport import import_data as import_archive  # type: ignore[no-redef]
-    import_archive = partial(
-        import_archive, extras_mode_existing='ncu', extras_mode_new='import'
-    )  # type: ignore[call-arg]
-
-    def import_with_migrate(
-        archive_path: ty.Union[str, pathlib.Path],
-        *args: ty.Any,
-        forbid_migration: bool = False,
-        **kwargs: ty.Any
-    ) -> None:
-        """
-        Import AiiDA Archive. If the version is incompatible
-        try to migrate the archive if --archive-cache-forbid-migration option is not specified
-        """
-        # these are only availbale after aiida >= 1.5.0, maybe rely on verdi import instead
-        from aiida.tools.importexport import (
-            EXPORT_VERSION,
-            IncompatibleArchiveVersionError,
-            detect_archive_type,
-        )
-        from aiida.tools.importexport.archive.migrators import get_migrator  # type: ignore[import-not-found]
-
-        try:
-            import_archive(archive_path, *args, **kwargs)
-        except IncompatibleArchiveVersionError:
-            if not forbid_migration:
-                echo_warning(f'incompatible version detected for {archive_path}, trying migration')
-                migrator = get_migrator(detect_archive_type(archive_path))(archive_path)
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    archive_path = migrator.migrate(
-                        EXPORT_VERSION, None, out_compression='none', work_dir=temp_dir
-                    )
-                    import_archive(archive_path, *args, **kwargs)
-            else:
-                raise
+        else:
+            raise
 
 
 def load_node_archive(archive_path: str, forbid_migration: bool = False) -> None:
