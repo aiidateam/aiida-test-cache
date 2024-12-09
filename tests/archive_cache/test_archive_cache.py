@@ -79,7 +79,9 @@ def check_diff_workchain_fixture():
 #### tests
 
 
-def test_create_node_archive(mock_code_factory, generate_diff_inputs, clear_database, tmp_path):
+def test_create_node_archive(
+    aiida_profile_clean, mock_code_factory, generate_diff_inputs, tmp_path
+):
     """
     Basic test of the create node archive fixture functionality,
     runs diff workchain and creates archive, check if archive was created
@@ -110,7 +112,7 @@ def test_create_node_archive(mock_code_factory, generate_diff_inputs, clear_data
     assert os.path.isfile(archive_path)
 
 
-def test_load_node_archive(clear_database, absolute_archive_path):
+def test_load_node_archive(aiida_profile_clean, absolute_archive_path):
     """Basic test of the load node archive fixture functionality, check if archive is loaded"""
 
     full_archive_path = absolute_archive_path('diff_workchain.tar.gz')
@@ -124,7 +126,7 @@ def test_load_node_archive(clear_database, absolute_archive_path):
     assert n_nodes == 9
 
 
-def test_mock_hash_codes(mock_code_factory, clear_database, liberal_hash):
+def test_mock_hash_codes(aiida_profile_clean, mock_code_factory, liberal_hash):
     """test if mock of _get_objects_to_hash works for Code and Calcs"""
 
     mock_code = mock_code_factory(
@@ -144,15 +146,15 @@ def test_mock_hash_codes(mock_code_factory, clear_database, liberal_hash):
     ]
 )
 def test_enable_archive_cache(
-    archive_path, aiida_local_code_factory, generate_diff_inputs, enable_archive_cache,
-    clear_database, check_diff_workchain
+    archive_path, aiida_profile_clean, aiida_code_installed, generate_diff_inputs,
+    enable_archive_cache, check_diff_workchain
 ):
     """
     Basic test of the enable_archive_cache fixture
     """
 
     inputs = {'diff': generate_diff_inputs()}
-    diff_code = aiida_local_code_factory(executable='diff', entry_point='diff')
+    diff_code = aiida_code_installed(filepath_executable='diff')
     diff_code.store()
     inputs['diff']['code'] = diff_code
     with enable_archive_cache(archive_path, calculation_class=CalculationFactory(CALC_ENTRY_POINT)):
@@ -162,7 +164,7 @@ def test_enable_archive_cache(
 
 
 def test_enable_archive_cache_non_existent(
-    aiida_local_code_factory, generate_diff_inputs, enable_archive_cache, clear_database,
+    aiida_profile_clean, aiida_code_installed, generate_diff_inputs, enable_archive_cache,
     tmp_path_factory, check_diff_workchain
 ):
     """
@@ -171,7 +173,7 @@ def test_enable_archive_cache_non_existent(
     """
 
     inputs = {'diff': generate_diff_inputs()}
-    diff_code = aiida_local_code_factory(executable='diff', entry_point='diff')
+    diff_code = aiida_code_installed(filepath_executable='diff')
     diff_code.store()
     inputs['diff']['code'] = diff_code
 
