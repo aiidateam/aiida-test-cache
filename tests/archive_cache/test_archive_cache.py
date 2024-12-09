@@ -79,9 +79,7 @@ def check_diff_workchain_fixture():
 #### tests
 
 
-def test_create_node_archive(
-    mock_code_factory, generate_diff_inputs, aiida_profile_clean, tmp_path
-):
+def test_create_node_archive(mock_code_factory, generate_diff_inputs, clear_database, tmp_path):
     """
     Basic test of the create node archive fixture functionality,
     runs diff workchain and creates archive, check if archive was created
@@ -112,7 +110,7 @@ def test_create_node_archive(
     assert os.path.isfile(archive_path)
 
 
-def test_load_node_archive(aiida_profile_clean, absolute_archive_path):
+def test_load_node_archive(clear_database, absolute_archive_path):
     """Basic test of the load node archive fixture functionality, check if archive is loaded"""
 
     full_archive_path = absolute_archive_path('diff_workchain.tar.gz')
@@ -126,7 +124,7 @@ def test_load_node_archive(aiida_profile_clean, absolute_archive_path):
     assert n_nodes == 9
 
 
-def test_mock_hash_codes(mock_code_factory, aiida_profile_clean, liberal_hash):
+def test_mock_hash_codes(mock_code_factory, clear_database, liberal_hash):
     """test if mock of _get_objects_to_hash works for Code and Calcs"""
 
     mock_code = mock_code_factory(
@@ -147,7 +145,7 @@ def test_mock_hash_codes(mock_code_factory, aiida_profile_clean, liberal_hash):
 )
 def test_enable_archive_cache(
     archive_path, aiida_local_code_factory, generate_diff_inputs, enable_archive_cache,
-    aiida_profile_clean, check_diff_workchain
+    clear_database, check_diff_workchain
 ):
     """
     Basic test of the enable_archive_cache fixture
@@ -164,7 +162,7 @@ def test_enable_archive_cache(
 
 
 def test_enable_archive_cache_non_existent(
-    aiida_profile_clean, aiida_local_code_factory, generate_diff_inputs, enable_archive_cache,
+    aiida_local_code_factory, generate_diff_inputs, enable_archive_cache, clear_database,
     tmp_path_factory, check_diff_workchain
 ):
     """
