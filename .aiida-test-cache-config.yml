@@ -10,4 +10,6 @@ archive_cache:
       # The test archives have version 0.8
       - environment_variables_double_quotes # This option was introduced in aiida-core 2.0
       - submit_script_filename # This option was introduced in aiida-core 1.2.1 (archive version 0.9)
-      - metadata_inputs # Added in aiida-core 2.3.0
+      # metadata_inputs is now ignored automatically since AiiDA v2.6.0
+      # commit 4626b11f85cd0d95a17d8f5766a90b88ddddd689
+      #- metadata_inputs # Added in aiida-core 2.3.0
