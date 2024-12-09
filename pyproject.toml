@@ -75,6 +75,10 @@ aiida_archive_cache = "aiida_test_cache.archive_cache"
 addopts = '--durations=10 --durations-min=3 --strict-config --strict-markers -ra --cov-report xml --cov-append'
 filterwarnings = [
     'ignore:Creating AiiDA configuration:UserWarning:aiida',
+    # https://github.com/aiidateam/plumpy/issues/283
+    'ignore:There is no current event loop:DeprecationWarning:plumpy',
+    # https://github.com/aiidateam/aiida-core/issues/6657
+    'ignore:Python 3.14 will, by default, filter extracted tar archives:DeprecationWarning:aiida',
 ]
 
 [tool.yapf]

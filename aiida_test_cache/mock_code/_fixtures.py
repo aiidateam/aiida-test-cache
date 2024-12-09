@@ -226,11 +226,11 @@ def mock_code_factory(
         if _config_action == ConfigActions.GENERATE.value:
             mock_code_config[label] = code_executable_path
         code = InstalledCode(
-            input_plugin_name=entry_point,
             computer=aiida_localhost,
+            default_calc_job_plugin=entry_point,
             filepath_executable=mock_executable_path,
+            label=code_label,
         )
-        code.label = code_label
         variables = MockVariables(
             log_file=log_file.absolute(),
             label=label,
@@ -242,7 +242,7 @@ def mock_code_factory(
             fail_on_missing=_fail_on_missing,
             _hasher=hasher,
         )
-        code.set_prepend_text(variables.to_env())
+        code.prepend_text = variables.to_env()
 
         code.store()
 
