@@ -11,7 +11,7 @@ import uuid
 
 import click
 import pytest
-from aiida.orm import Code
+from aiida.orm import InstalledCode
 
 from .._config import CONFIG_FILE_NAME, Config, ConfigActions
 from ._env_keys import MockVariables
@@ -103,7 +103,7 @@ def testing_config(testing_config_action):
 
 
 def _forget_mpi_decorator(func):
-    """Modify :py:meth:`aiida.orm.Code.get_prepend_cmdline_params` to discard MPI parameters."""
+    """Modify :py:meth:`aiida.orm.InstalledCode.get_prepend_cmdline_params` to discard MPI parameters."""
 
     def _get_prepend_cmdline_params(self, mpi_args=None, extra_mpirun_params=None):  # noqa: ARG001
         return func(self)
@@ -117,7 +117,7 @@ def mock_code_factory(
     mock_fail_on_missing, mock_disable_mpi, monkeypatch, request, tmp_path
 ):
     """
-    Fixture to create a mock AiiDA Code.
+    Fixture to create a mock AiiDA InstalledCode.
 
     testing_config_action :
         Read config file if present ('read'), require config file ('require') or generate new config file ('generate').
@@ -225,9 +225,10 @@ def mock_code_factory(
 
         if _config_action == ConfigActions.GENERATE.value:
             mock_code_config[label] = code_executable_path
-        code = Code(
+        code = InstalledCode(
             input_plugin_name=entry_point,
-            remote_computer_exec=[aiida_localhost, mock_executable_path]
+            computer=aiida_localhost,
+            filepath_executable=mock_executable_path,
         )
         code.label = code_label
         variables = MockVariables(

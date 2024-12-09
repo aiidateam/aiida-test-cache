@@ -6,7 +6,7 @@ Using :mod:`.mock_code`
 
  1. A command-line script ``aiida-mock-code`` (the *mock executable*) that is executed instead of the *actual* executable and acts as a *cache* for the outputs of the actual executable
 
- 2. A pytest fixture :py:func:`~aiida_test_cache.mock_code.mock_code_factory` that sets up an AiiDA Code pointing to the mock executable
+ 2. A pytest fixture :py:func:`~aiida_test_cache.mock_code.mock_code_factory` that sets up an AiiDA InstalledCode pointing to the mock executable
 
 In the following, we will set up a mock code for the ``diff`` executable in three simple steps.
 
@@ -54,7 +54,7 @@ Second, we need to tell the mock executable where to find the *actual* ``diff`` 
    Finally, one could use dedicated environment variables to specify the locations of the executables, but there may be many of them, making this approach cumbersome.
    Ergo, a configuration file.
 
-Finally, we can use our fixture in our tests as if it would provide a normal :py:class:`~aiida.orm.Code`:
+Finally, we can use our fixture in our tests as if it would provide a normal :py:class:`~aiida.orm.InstalledCode`:
 
 .. code-block:: python
 

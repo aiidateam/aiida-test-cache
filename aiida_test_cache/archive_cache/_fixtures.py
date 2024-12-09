@@ -17,6 +17,7 @@ from aiida.orm import (
     Code,
     Dict,
     FolderData,
+    InstalledCode,
     List,
     QueryBuilder,
     RemoteData,
@@ -296,6 +297,7 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
         return objects
 
     monkeypatch_hash_objects(monkeypatch, Code, mock_objects_to_hash_code)
+    monkeypatch_hash_objects(monkeypatch, InstalledCode, mock_objects_to_hash_code)
     monkeypatch_hash_objects(monkeypatch, CalcJobNode, mock_objects_to_hash_calcjob)
 
     nodes_to_patch = [Dict, SinglefileData, List, FolderData, RemoteData, StructureData]
