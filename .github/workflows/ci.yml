@@ -17,11 +17,11 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12']
-        aiida-version: ['2.5']
+        aiida-version-spec: ['>=2.5']
         # Include a job with minimum supported aiida-version
         include:
           - python-version: '3.9'
-            aiida-version: '2.1'
+            aiida-version-spec: '==2.1'
       fail-fast: false
 
     services:
@@ -55,7 +55,7 @@ jobs:
       with:
         version: ${{ env.UV_VER }}
     - name: Install package
-      run: uv pip install --system -e .[tests] aiida-core==${{ matrix.aiida-version }}
+      run: uv pip install --system -e .[tests] "aiida-core${{ matrix.aiida-version-spec }}"
 
     - name: Run test suite
       env:
