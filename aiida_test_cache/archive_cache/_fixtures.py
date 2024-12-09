@@ -13,11 +13,10 @@ from aiida import plugins
 from aiida.common.links import LinkType
 from aiida.manage.caching import enable_caching
 from aiida.orm import (
+    AbstractCode,
     CalcJobNode,
-    Code,
     Dict,
     FolderData,
-    InstalledCode,
     List,
     QueryBuilder,
     RemoteData,
@@ -246,7 +245,7 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
 
     def mock_objects_to_hash_code(self):
         """
-        Return a list of objects which should be included in the hash of a Code node
+        Return a list of objects which should be included in the hash of a AbstractCode node
         """
         self = get_node_from_hash_objects_caller(self)
         # computer names are changed by aiida-core if imported and do not have same uuid.
@@ -296,8 +295,7 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
         ]
         return objects
 
-    monkeypatch_hash_objects(monkeypatch, Code, mock_objects_to_hash_code)
-    monkeypatch_hash_objects(monkeypatch, InstalledCode, mock_objects_to_hash_code)
+    monkeypatch_hash_objects(monkeypatch, AbstractCode, mock_objects_to_hash_code)
     monkeypatch_hash_objects(monkeypatch, CalcJobNode, mock_objects_to_hash_calcjob)
 
     nodes_to_patch = [Dict, SinglefileData, List, FolderData, RemoteData, StructureData]
