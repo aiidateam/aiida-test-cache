@@ -19,7 +19,8 @@ jobs:
         python-version: ['3.9', '3.10', '3.11', '3.12']
         resolution: ['highest']
         # Include a job with minimum supported aiida-version,
-        # achieved via uv's resolution strategy
+        # achieved via uv's resolution strategy, see:
+        # https://docs.astral.sh/uv/reference/settings/#resolution
         include:
           - python-version: '3.9'
             resolution: 'lowest-direct'
