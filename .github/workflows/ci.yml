@@ -6,7 +6,7 @@ on:
             - main
     pull_request:
 env:
-    UV_VER: "0.5.6"
+    UV_VER: "0.5.14"
     FORCE_COLOR: 1
 
 jobs:
@@ -53,7 +53,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Set up uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v5
       with:
         version: ${{ env.UV_VER }}
     - name: Install package
@@ -87,7 +87,7 @@ jobs:
         python-version: '3.12'
 
     - name: Set up uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v5
       with:
         version: ${{ env.UV_VER }}
 
