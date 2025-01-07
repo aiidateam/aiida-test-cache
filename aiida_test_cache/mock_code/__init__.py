@@ -24,7 +24,9 @@ from aiida import __version__ as aiida_version
 from packaging.version import Version
 
 if Version(aiida_version) >= Version('2.6.0'):
-    aiida_core_fixtures = 'aiida.tools.pytest_fixtures'
+    # DEBUG:
+    aiida_core_fixtures = 'aiida.manage.tests.pytest_fixtures'
+    # aiida_core_fixtures = 'aiida.tools.pytest_fixtures'
 else:
     aiida_core_fixtures = 'aiida.manage.tests.pytest_fixtures'
 pytest_plugins = [aiida_core_fixtures]
