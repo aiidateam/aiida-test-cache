@@ -10,7 +10,7 @@ pytest_plugins = [
 ]
 
 # Compatibility with old aiida-core fixtures
-if Version(aiida_version) < Version('2.7.0'):
+if Version(aiida_version) < Version('2.6.0'):
 
     @pytest.fixture
     def aiida_profile_clean(clear_database):
