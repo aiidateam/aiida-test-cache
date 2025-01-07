@@ -172,7 +172,9 @@ def test_enable_archive_cache_non_existent(
     """
 
     inputs = {'diff': generate_diff_inputs()}
-    diff_code = aiida_code_installed(filepath_executable='diff')
+    diff_code = aiida_code_installed(
+        filepath_executable='diff', default_calc_job_plugin=CALC_ENTRY_POINT
+    )
     diff_code.store()
     inputs['diff']['code'] = diff_code
 
