@@ -59,6 +59,14 @@ def monkeypatch_hash_objects(
             def _get_objects_to_hash(self):
                 return hash_objects_func(self)
 
+            # Compatibility with aiida-core < 2.6
+            # https://github.com/aiidateam/aiida-core/pull/6347
+            def compute_hash(self):
+                try:
+                    return super().compute_hash()
+                except AttributeError:
+                    return super().get_hash()
+
         monkeypatch.setattr(node_class, "_CLS_NODE_CACHING", MockNodeCaching)
 
 
