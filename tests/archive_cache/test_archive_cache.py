@@ -64,16 +64,16 @@ def check_diff_workchain_fixture():
 
         #Test if cache was used?
         diffjob = node.base.links.get_outgoing().get_node_by_label('CALL')
-        cache_src = diffjob.base.caching.get_cache_source()
+        assert diffjob.base.caching.is_valid_cache
 
         calc_hash = diffjob.base.caching.get_hash()
         assert calc_hash == EXPECTED_HASH, f'Hash mismatch. hashed objects: {diffjob.base.caching._get_objects_to_hash()}'
 
         #Make sure that the cache was used if it should have been
         if should_have_used_cache:
-            assert cache_src is not None, "Workchain did not use cache even though it should have"
+            assert diffjob.base.caching.is_created_from_cache, "Workchain did not use cache even though it should have"
         else:
-            assert cache_src is None, "Workchain used the cache even though it shouldn't have"
+            assert not diffjob.base.caching.is_created_from_cache, "Workchain used the cache even though it shouldn't have"
 
     return _check_diff_workchain
 
