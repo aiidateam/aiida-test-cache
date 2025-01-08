@@ -248,7 +248,6 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
         Return a list of objects which should be included in the hash of a AbstractCode node
         """
         self = get_node_from_hash_objects_caller(self)
-        print(f"hash_code: {self.base.attributes.get(key='input_plugin')}")
         # computer names are changed by aiida-core if imported and do not have same uuid.
         return [self.base.attributes.get(key='input_plugin')]
 
@@ -275,7 +274,6 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
                            link_type=(LinkType.INPUT_CALC, LinkType.INPUT_WORK)
                        ) if entry.link_label not in hash_ignored_inputs
                    }]
-        print(objects)
         return objects
 
     def mock_objects_to_hash(self):
@@ -295,7 +293,6 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
                 key not in self._hash_ignored_attributes and key not in self._updatable_attributes
             },
         ]
-        print(f"mock_objects_to_hash: {self}: {objects}")
         return objects
 
     monkeypatch_hash_objects(monkeypatch, AbstractCode, mock_objects_to_hash_code)
