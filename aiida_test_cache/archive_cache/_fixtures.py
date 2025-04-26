@@ -270,7 +270,7 @@ def liberal_hash(monkeypatch: pytest.MonkeyPatch, testing_config: Config) -> Non
             if key not in self._hash_ignored_attributes and key not in self._updatable_attributes
         },
                    {
-                       entry.link_label: entry.node.get_hash()
+                       entry.link_label: entry.node.base.caching.compute_hash()
                        for entry in
                        self.get_incoming(link_type=(LinkType.INPUT_CALC, LinkType.INPUT_WORK))
                        if entry.link_label not in hash_ignored_inputs

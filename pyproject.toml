@@ -44,7 +44,7 @@ urls = {Homepage = "https://aiida-testing.readthedocs.io/"}
 requires-python = ">=3.7"
 # Note the dependency on setuptools due to pkg_resources
 dependencies = [
-    "aiida-core>=1.0.0,<2.6",
+    "aiida-core>=1.0.0,<3",
     "pytest>=7.0",
     "voluptuous~=0.12",
     "setuptools",
