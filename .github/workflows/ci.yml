@@ -6,7 +6,7 @@ on:
             - main
     pull_request:
 env:
-    UV_VER: "0.5.6"
+    UV_VER: "0.5.14"
     FORCE_COLOR: 1
 
 jobs:
@@ -17,11 +17,13 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12']
-        aiida-version-spec: ['>=2.5']
-        # Include a job with minimum supported aiida-version
+        resolution: ['highest']
+        # Include a job with minimum supported aiida-version,
+        # achieved via uv's resolution strategy, see:
+        # https://docs.astral.sh/uv/reference/settings/#resolution
         include:
           - python-version: '3.9'
-            aiida-version-spec: '==2.1'
+            resolution: 'lowest-direct'
       fail-fast: false
 
     services:
@@ -51,11 +53,11 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Set up uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v5
       with:
         version: ${{ env.UV_VER }}
     - name: Install package
-      run: uv pip install --system -e .[tests] "aiida-core${{ matrix.aiida-version-spec }}"
+      run: uv pip install --resolution ${{ matrix.resolution }} --system -e .[tests]
 
     - name: Run test suite
       env:
@@ -85,7 +87,7 @@ jobs:
         python-version: '3.12'
 
     - name: Set up uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v5
       with:
         version: ${{ env.UV_VER }}
 

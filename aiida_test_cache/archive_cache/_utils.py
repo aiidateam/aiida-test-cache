@@ -56,6 +56,8 @@ def monkeypatch_hash_objects(
             NodeCaching subclass with stripped down _get_objects_to_hash method
             """
 
+            # Compatibility with aiida-core < 2.6
+            # In https://github.com/aiidateam/aiida-core/pull/6323
             def _get_objects_to_hash(self):
                 return self.get_objects_to_hash()
 
