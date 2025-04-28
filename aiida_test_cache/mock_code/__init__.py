@@ -17,4 +17,4 @@ __all__ = (
 )
 
 # ensure aiida's pytest plugin is loaded, which we rely on
-pytest_plugins = ['aiida.manage.tests.pytest_fixtures']
+pytest_plugins = ['aiida.tools.pytest_fixtures']

@@ -29,12 +29,12 @@ def monkeypatch_hash_objects(
     monkeypatch: pytest.MonkeyPatch, node_class: type[Node], hash_objects_func: ty.Callable
 ) -> None:
     """
-    Monkeypatch the _get_objects_to_hash method in aiida-core for the given node class
+    Monkeypatch the get_objects_to_hash method in aiida-core for the given node class
 
     :param monkeypatch: monkeypatch fixture of pytest
     :param node_class: Node class to monkeypatch
     :param hash_objects_func: function, which should be called instead of the
-                              `_get_objects_to_hash` method
+                              `get_objects_to_hash` method
 
     .. note::
 
@@ -46,44 +46,25 @@ def monkeypatch_hash_objects(
         monkeypatched on the Nodes, i.e. the _CLS_NODE_CACHING attribute
 
     """
-    try:
-        monkeypatch.setattr(node_class, "_get_objects_to_hash", hash_objects_func)
-    except AttributeError:
-        node_caching_class = node_class._CLS_NODE_CACHING
 
-        class MockNodeCaching(node_caching_class):  #type: ignore
-            """
-            NodeCaching subclass with stripped down _get_objects_to_hash method
-            """
+    class MockNodeCaching(node_class._CLS_NODE_CACHING):  # type: ignore[misc,name-defined]
+        """
+        NodeCaching subclass with stripped down get_objects_to_hash method
+        """
 
-            # Compatibility with aiida-core < 2.6
-            # In https://github.com/aiidateam/aiida-core/pull/6323
-            def _get_objects_to_hash(self):
-                return self.get_objects_to_hash()
+        def get_objects_to_hash(self):
+            return hash_objects_func(self)
 
-            def get_objects_to_hash(self):
-                return hash_objects_func(self)
-
-            # Compatibility with aiida-core < 2.6
-            # https://github.com/aiidateam/aiida-core/pull/6347
-            def compute_hash(self):
-                try:
-                    return super().compute_hash()
-                except AttributeError:
-                    return super().get_hash()
-
-        monkeypatch.setattr(node_class, "_CLS_NODE_CACHING", MockNodeCaching)
+    monkeypatch.setattr(node_class, "_CLS_NODE_CACHING", MockNodeCaching)
 
 
 def get_node_from_hash_objects_caller(caller: ty.Any) -> Node:
     """
     Get the actual node instance from the class calling the
-    _get_objects_to_hash method
+    get_objects_to_hash method
 
-    :param caller: object holding _get_objects_to_hash
+    :param caller: object holding get_objects_to_hash
     """
-    #Case for AiiDA 2.0: The class holding the _get_objects_to_hash method
-    #is the NodeCaching class not the actual node
     return caller._node  #type: ignore[no-any-return]
 
 

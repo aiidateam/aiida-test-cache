@@ -41,7 +41,7 @@ keywords = [
 urls = {Homepage = "https://aiida-testing.readthedocs.io/"}
 requires-python = ">=3.9"
 dependencies = [
-    "aiida-core>=2.1,<3",
+    "aiida-core>=2.6,<3",
     "pytest>=7.0",
     "voluptuous~=0.12",
 ]
