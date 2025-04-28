@@ -259,6 +259,6 @@ def mock_code_factory(
     yield _get_mock_code
 
     log_text = log_file.read_text("utf8")
-    print("AiiDA mock code logging:")
     if log_text:
+        print("AiiDA mock code logging:")
         print(log_text)
