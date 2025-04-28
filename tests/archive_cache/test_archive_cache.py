@@ -67,7 +67,7 @@ def check_diff_workchain_fixture():
         assert diffjob.base.caching.is_valid_cache
 
         calc_hash = diffjob.base.caching.get_hash()
-        assert calc_hash == EXPECTED_HASH, f'Hash mismatch. hashed objects: {diffjob.base.caching._get_objects_to_hash()}'
+        assert calc_hash == EXPECTED_HASH, f'Hash mismatch. hashed objects: {diffjob.base.caching.get_objects_to_hash()}'
 
         #Make sure that the cache was used if it should have been
         if should_have_used_cache:
@@ -129,7 +129,7 @@ def test_load_node_archive(aiida_profile_clean, absolute_archive_path):
 
 
 def test_mock_hash_codes(aiida_profile_clean, mock_code_factory, liberal_hash):
-    """test if mock of _get_objects_to_hash works for Code and Calcs"""
+    """test if mock of get_objects_to_hash works for Code and Calcs"""
 
     mock_code = mock_code_factory(
         label='diff',
