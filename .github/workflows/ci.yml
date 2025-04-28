@@ -88,11 +88,10 @@ jobs:
     - name: Set up uv
       uses: astral-sh/setup-uv@v6
       with:
-        activate-environment: true
         version: ${{ env.UV_VER }}
 
     - name: Install package
-      run: uv pip install -e .[pre_commit]
+      run: uv pip install --system -e .[pre_commit]
 
     - name: Run pre-commit
       uses: pre-commit/action@v3.0.1
