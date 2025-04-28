@@ -16,8 +16,8 @@ build:
         python: '3.11'
     commands:
         - asdf plugin add uv
-        - asdf install uv 0.5.2
-        - asdf global uv 0.5.2
+        - asdf install uv 0.6.17
+        - asdf global uv 0.6.17
         - uv venv
         - uv pip install .[docs]
         - . .venv/bin/activate && cd docs && make BUILDDIR=$READTHEDOCS_OUTPUT
