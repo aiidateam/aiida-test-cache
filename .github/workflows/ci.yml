@@ -64,7 +64,7 @@ jobs:
     - name: Run test suite
       run: |
         aiida-mock-code || true
-        pytest --cov=aiida_test_cache tests/
+        pytest -s --cov=aiida_test_cache tests/
 
     - name: Upload coverage report
       uses: codecov/codecov-action@v5
