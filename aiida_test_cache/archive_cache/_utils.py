@@ -46,20 +46,16 @@ def monkeypatch_hash_objects(
         monkeypatched on the Nodes, i.e. the _CLS_NODE_CACHING attribute
 
     """
-    try:
-        monkeypatch.setattr(node_class, "_get_objects_to_hash", hash_objects_func)
-    except AttributeError:
-        node_caching_class = node_class._CLS_NODE_CACHING
 
-        class MockNodeCaching(node_caching_class):  #type: ignore
-            """
-            NodeCaching subclass with stripped down _get_objects_to_hash method
-            """
+    class MockNodeCaching(node_class._CLS_NODE_CACHING):  # type: ignore[misc,name-defined]
+        """
+        NodeCaching subclass with stripped down _get_objects_to_hash method
+        """
 
-            def get_objects_to_hash(self):
-                return hash_objects_func(self)
+        def get_objects_to_hash(self):
+            return hash_objects_func(self)
 
-        monkeypatch.setattr(node_class, "_CLS_NODE_CACHING", MockNodeCaching)
+    monkeypatch.setattr(node_class, "_CLS_NODE_CACHING", MockNodeCaching)
 
 
 def get_node_from_hash_objects_caller(caller: ty.Any) -> Node:
