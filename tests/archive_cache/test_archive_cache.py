@@ -137,7 +137,7 @@ def test_mock_hash_codes(aiida_profile_clean, mock_code_factory, liberal_hash):
         entry_point=CALC_ENTRY_POINT,
         ignore_paths=('_aiidasubmit.sh', 'file*')
     )
-    objs = mock_code.base.caching._get_objects_to_hash()
+    objs = mock_code.base.caching.get_objects_to_hash()
     assert objs == [mock_code.base.attributes.get(key='input_plugin')]
 
 

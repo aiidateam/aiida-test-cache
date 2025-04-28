@@ -34,7 +34,7 @@ def monkeypatch_hash_objects(
     :param monkeypatch: monkeypatch fixture of pytest
     :param node_class: Node class to monkeypatch
     :param hash_objects_func: function, which should be called instead of the
-                              `_get_objects_to_hash` method
+                              `get_objects_to_hash` method
 
     .. note::
 
@@ -55,11 +55,6 @@ def monkeypatch_hash_objects(
             """
             NodeCaching subclass with stripped down _get_objects_to_hash method
             """
-
-            # Compatibility with aiida-core < 2.6
-            # In https://github.com/aiidateam/aiida-core/pull/6323
-            def _get_objects_to_hash(self):
-                return self.get_objects_to_hash()
 
             def get_objects_to_hash(self):
                 return hash_objects_func(self)
