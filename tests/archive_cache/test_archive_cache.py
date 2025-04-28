@@ -71,9 +71,9 @@ def check_diff_workchain_fixture():
 
         #Make sure that the cache was used if it should have been
         if should_have_used_cache:
-            assert diffjob.base.caching.is_created_from_cache, "Workchain did not use cache even though it should have"
+            assert diffjob.base.caching.is_created_from_cache, "Workchain did not use cache but should have"
         else:
-            assert not diffjob.base.caching.is_created_from_cache, "Workchain used the cache even though it shouldn't have"
+            assert not diffjob.base.caching.is_created_from_cache, "Workchain used cache but should not have"
 
     return _check_diff_workchain
 
@@ -142,7 +142,7 @@ def test_mock_hash_codes(aiida_profile_clean, mock_code_factory, liberal_hash):
 
 
 @pytest.mark.parametrize(
-    'archive_path', [CWD / 'caches/test_workchain.tar.gz', 'test_workchain.tar.gz']
+    "archive_path", [CWD / "caches/test_workchain.tar.gz", "test_workchain.tar.gz"]
 )
 def test_enable_archive_cache(
     archive_path, aiida_profile_clean, aiida_code_installed, generate_diff_inputs,

@@ -58,7 +58,7 @@ tests = [
 ]
 pre_commit = [
     "pre-commit",
-    "mypy==1.13",
+    "mypy==1.14",
     "types-PyYAML",
 ]
 dev = [
@@ -73,7 +73,7 @@ aiida_mock_code = "aiida_test_cache.mock_code"
 aiida_archive_cache = "aiida_test_cache.archive_cache"
 
 [tool.pytest.ini_options]
-addopts = '--durations=10 --durations-min=3 --strict-config --strict-markers -ra --cov-report xml --cov-append'
+addopts = '--strict-config --strict-markers -ra --cov-report xml --cov-append'
 filterwarnings = [
     'ignore:Creating AiiDA configuration:UserWarning:aiida',
     # https://github.com/aiidateam/plumpy/issues/283
