@@ -59,7 +59,7 @@ jobs:
         version: ${{ env.UV_VER }}
 
     - name: Install package
-      run: uv pip install --resolution ${{ matrix.resolution }} -e .[tests]
+      run: uv pip install --prerelease=allow --resolution ${{ matrix.resolution }} -e .[tests]
 
     - name: Run test suite
       run: |
