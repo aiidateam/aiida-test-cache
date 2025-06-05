@@ -27,13 +27,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: '3.12'
+          version: 0.7.11
+
       - name: Check version tag
         run: |
-          ver=$(python -c "from tomllib import load;p=load(open('pyproject.toml','rb'));print(p['project']['version'])")
+          ver=$(uv version --short)
           errormsg="tag version '${{ github.ref_name }}' != 'v$ver' specified in pyproject.toml"
           if [ "v${ver}" != "${{ github.ref_name }}" ]; then echo "$errormsg"; exit 1; fi
 
