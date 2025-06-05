@@ -73,6 +73,7 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
 
       # Remove the PR label which triggered this release,
       # but only if the release failed. Presumably, in this case we might want
