@@ -21,7 +21,9 @@ jobs:
   check-release-tag:
     name: Check tag version
     if: >-
-      github.repository == 'aiidateam/aiida-test-cache'
+      github.repository == 'aiidateam/aiida-test-cache' &&
+      github.event_name == 'push' &&
+      github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
