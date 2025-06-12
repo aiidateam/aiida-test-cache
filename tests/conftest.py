@@ -2,10 +2,29 @@
 Configuration file for pytest tests of aiida-test-cache.
 """
 import pytest
+from aiida import __version__ as aiida_version
+from packaging.version import Version
 
 pytest_plugins = [
     'pytester',
 ]
+
+# Compatibility with old aiida-core fixtures
+if Version(aiida_version) < Version('2.6.0'):
+
+    @pytest.fixture
+    def aiida_profile_clean(clear_database):
+        pass
+
+    @pytest.fixture
+    def aiida_code_installed(aiida_local_code_factory):
+
+        def _code(filepath_executable, default_calc_job_plugin):
+            return aiida_local_code_factory(
+                executable=filepath_executable, entry_point=default_calc_job_plugin
+            )
+
+        return _code
 
 
 @pytest.fixture
